@@ -1,0 +1,30 @@
+package com.equinox.EquinoxGym;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+public interface PagoRepository extends JpaRepository<Pago, Long> {
+
+    @Query("SELECT SUM(p.monto) FROM Pago p WHERE p.fechaPago BETWEEN :inicio AND :fin")
+    BigDecimal obtenerTotalRecaudadoDelMes(@Param("inicio") LocalDate inicio,
+                                           @Param("fin") LocalDate fin);
+
+    List<Pago> findByMedioPago(String medioPago);
+
+    List<Pago> findByFechaPago(LocalDate fechaPago);
+
+    List<Pago> findByMedioPagoAndFechaPago(String medioPago, LocalDate fechaPago);
+
+    List<Pago> findByCuotaSocioId(Long socioId);
+
+    List<Pago> findByCuotaSocioIdAndMedioPago(Long socioId, String medioPago);
+
+    List<Pago> findByCuotaSocioIdAndFechaPago(Long socioId, LocalDate fechaPago);
+
+    List<Pago> findByCuotaSocioIdAndMedioPagoAndFechaPago(Long socioId, String medioPago, LocalDate fechaPago);
+}
