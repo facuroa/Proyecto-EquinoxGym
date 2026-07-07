@@ -5,6 +5,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -71,10 +72,14 @@ public class SocioController {
     public String guardarSocio(@ModelAttribute("socio") Socio socioForm,
                                @RequestParam(value = "planId", required = false) Long planId,
                                @RequestParam(value = "fechaInicioPlan", required = false) String fechaInicioPlanStr,
+                               @RequestParam(value = "cobrarAlta", required = false) Boolean cobrarAlta,
+                               @RequestParam(value = "montoInicial", required = false) BigDecimal montoInicial,
+                               @RequestParam(value = "medioPagoInicial", required = false) String medioPagoInicial,
                                BindingResult result,
                                Model model) {
 
         boolean esNuevo = (socioForm.getId() == null);
+        boolean cobrarAltaMarcado = Boolean.TRUE.equals(cobrarAlta);
         Plan planSeleccionado = null;
 
         if (socioForm.getDni() == null || socioForm.getDni().trim().isEmpty()) {
@@ -86,6 +91,15 @@ public class SocioController {
 
         if (planId != null) {
             planSeleccionado = planRepository.findById(planId).orElse(null);
+        }
+
+        if (cobrarAltaMarcado && planSeleccionado == null) {
+            model.addAttribute("errorCobro", "Para registrar el cobro inicial primero tenés que seleccionar un plan.");
+            result.reject("error.socio", "Seleccione un plan para cobrar el alta.");
+        }
+        if (cobrarAltaMarcado && (medioPagoInicial == null || medioPagoInicial.trim().isEmpty())) {
+            model.addAttribute("errorCobro", "Para cobrar el alta tenés que seleccionar un medio de pago.");
+            result.reject("error.socio", "Seleccione un medio de pago para cobrar el alta.");
         }
 
         if (result.hasErrors()) {
@@ -128,7 +142,11 @@ public class SocioController {
 
         if (planSeleccionado != null) {
             if (esNuevo || !teniaPlan || !teniaCuotas) {
-                cobroService.asignarPlanAExistente(socioGuardado, planSeleccionado, inicio);
+                Cuota cuotaInicial = cobroService.asignarPlanAExistente(socioGuardado, planSeleccionado, inicio);
+                if (cobrarAltaMarcado) {
+                    BigDecimal montoACobrar = montoInicial != null ? montoInicial : planSeleccionado.getPrecio();
+                    cobroService.registrarPago(cuotaInicial, montoACobrar, medioPagoInicial);
+                }
             } else {
                 socioGuardado.setPlan(planSeleccionado);
                 socioGuardado.setFechaInicioPlan(inicio);
