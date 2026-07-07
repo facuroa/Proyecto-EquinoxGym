@@ -18,7 +18,7 @@
             <div>
                 <p class="topbar-label">Administración de pagos</p>
                 <h1 class="topbar-title">Registrar Pago</h1>
-                <p class="topbar-subtitle">Asociá el pago a una cuota pendiente y registrá el movimiento.</p>
+                <p class="topbar-subtitle">Usá esta pantalla para registros manuales. Para atención diaria se recomienda el módulo Cobrar.</p>
             </div>
             <div class="topbar-status">
                 <span>Acción actual</span>
@@ -46,22 +46,22 @@
                                 <option th:each="cuota : ${cuotasPendientes}"
                                         th:value="${cuota.id}"
                                         th:text="${cuota.socio != null
-                                            ? cuota.socio.nombreCompleto + ' - $' + cuota.monto + ' - Vence: ' + cuota.fechaVencimiento
+                                            ? cuota.socio.nombreCompleto + ' - $' + cuota.monto + ' - Vence: ' + cuota.fechaVencimiento + ' (' + cuota.textoVencimiento + ')'
                                             : 'Cuota #' + cuota.id}">
                                 </option>
                             </select>
-                            <small class="premium-help-text">La fecha de vencimiento de cada cuota se muestra en el listado.</small>
+                            <small class="premium-help-text">Para buscar más rápido por DNI o nombre, usá el módulo Cobrar.</small>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label premium-label">Monto</label>
-                            <input type="number" step="0.01" min="0" class="form-control premium-input"
-                                   th:field="*{monto}" placeholder="Ingrese el monto">
+                            <input type="number" step="0.01" min="0.01" class="form-control premium-input"
+                                   th:field="*{monto}" placeholder="Ingrese el monto" required>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label premium-label">Medio de pago</label>
-                            <select class="form-select premium-input premium-select" th:field="*{medioPago}">
+                            <select class="form-select premium-input premium-select" th:field="*{medioPago}" required>
                                 <option value="">Seleccione un medio de pago</option>
                                 <option value="Efectivo">Efectivo</option>
                                 <option value="Transferencia">Transferencia</option>
@@ -78,6 +78,7 @@
 
                     <div class="premium-form-actions">
                         <button type="submit" class="btn btn-gold-action">Guardar pago</button>
+                        <a th:href="@{/cobrar}" class="btn btn-outline-gold-soft">Ir a Cobrar</a>
                         <a th:href="@{/pagos}" class="btn btn-outline-gold-soft">Cancelar</a>
                     </div>
                 </form>
