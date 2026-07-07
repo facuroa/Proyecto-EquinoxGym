@@ -30,7 +30,7 @@
             <div class="premium-form-card">
                 <div class="premium-form-header">
                     <h3 th:text="${socio.id != null ? 'Datos del socio' : 'Registro de nuevo socio'}">Registro de nuevo socio</h3>
-                    <span>Completá los campos obligatorios</span>
+                    <span>Completá los datos personales, contacto y plan</span>
                 </div>
 
                 <form th:action="@{/socios/guardar}" th:object="${socio}" method="post" class="premium-form-body">
@@ -39,24 +39,35 @@
                     <div class="row g-4">
                         <div class="col-md-6">
                             <label class="form-label premium-label">Nombre</label>
-                            <input type="text" class="form-control premium-input" th:field="*{nombre}" placeholder="Ingrese el nombre">
+                            <input type="text" class="form-control premium-input" th:field="*{nombre}" placeholder="Ingrese el nombre" required>
                             <div class="premium-error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label premium-label">Apellido</label>
-                            <input type="text" class="form-control premium-input" th:field="*{apellido}" placeholder="Ingrese el apellido">
+                            <input type="text" class="form-control premium-input" th:field="*{apellido}" placeholder="Ingrese el apellido" required>
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label premium-label">DNI</label>
-                            <input type="text" class="form-control premium-input" th:field="*{dni}" placeholder="Ingrese el DNI">
+                            <input type="text" class="form-control premium-input" th:field="*{dni}" placeholder="Ingrese el DNI" required>
                             <div class="premium-error" th:if="${#fields.hasErrors('dni')}" th:errors="*{dni}"></div>
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label premium-label">Teléfono</label>
                             <input type="text" class="form-control premium-input" th:field="*{telefono}" placeholder="Ej: 362-4000000">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label premium-label">Correo electrónico</label>
+                            <input type="email" class="form-control premium-input" th:field="*{email}" placeholder="socio@email.com">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">Fecha de nacimiento</label>
+                            <input type="date" class="form-control premium-input" th:field="*{fechaNacimiento}">
+                            <small class="premium-help-text">Se usará para mostrar recordatorios de cumpleaños en el inicio.</small>
                         </div>
 
                         <div class="col-md-6">
@@ -69,7 +80,7 @@
                                         th:selected="${socio.plan != null and socio.plan.id == p.id}">
                                 </option>
                             </select>
-                            <small class="premium-help-text">Al asignar un plan se genera la primera cuota automáticamente.</small>
+                            <small class="premium-help-text">Al asignar un plan a un socio sin cuotas se genera la primera cuota automáticamente.</small>
                         </div>
 
                         <div class="col-md-6">
@@ -77,6 +88,12 @@
                             <input type="date" class="form-control premium-input" name="fechaInicioPlan"
                                    th:value="${socio.fechaInicioPlan}">
                             <small class="premium-help-text">Si la dejás vacía, se usa la fecha de hoy.</small>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label premium-label">Observaciones</label>
+                            <textarea class="form-control premium-input" th:field="*{observaciones}" rows="3"
+                                      placeholder="Notas internas: lesiones, condiciones, preferencias, autorizaciones, etc."></textarea>
                         </div>
                     </div>
 
