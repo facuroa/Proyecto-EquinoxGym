@@ -75,7 +75,7 @@
                 <div class="premium-table-header">
                     <div>
                         <h3>Listado de cuotas</h3>
-                        <span>Control de vencimientos y pagos</span>
+                        <span>Control de vencimientos, pagos y días restantes</span>
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -85,6 +85,7 @@
                                 <th>#</th>
                                 <th>Socio</th>
                                 <th>Fecha de vencimiento</th>
+                                <th>Días</th>
                                 <th>Fecha de pago</th>
                                 <th>Monto</th>
                                 <th>Estado</th>
@@ -93,12 +94,15 @@
                         </thead>
                         <tbody>
                             <tr th:if="${#lists.isEmpty(cuotas)}">
-                                <td colspan="7" class="text-center py-5 empty-state-cell">No se encontraron cuotas.</td>
+                                <td colspan="8" class="text-center py-5 empty-state-cell">No se encontraron cuotas.</td>
                             </tr>
                             <tr th:each="cuota, iterStat : ${cuotas}">
                                 <td th:text="${iterStat.count}">1</td>
                                 <td th:text="${cuota.socio != null ? cuota.socio.nombreCompleto : 'Sin socio'}">Socio</td>
                                 <td th:text="${cuota.fechaVencimiento}">2026-03-26</td>
+                                <td>
+                                    <span th:text="${cuota.textoVencimiento}">Faltan días</span>
+                                </td>
                                 <td th:text="${cuota.fechaPago != null ? cuota.fechaPago : '-'}">-</td>
                                 <td th:text="${'$ ' + cuota.monto}">$ 0</td>
                                 <td>
@@ -111,6 +115,9 @@
                                 </td>
                                 <td class="text-center">
                                     <div class="action-buttons-premium">
+                                        <a th:if="${cuota.fechaPago == null and cuota.socio != null}"
+                                           th:href="@{/cobrar(socioId=${cuota.socio.id})}"
+                                           class="btn btn-gold-search btn-sm">Cobrar</a>
                                         <a th:href="@{'/cuotas/editar/' + ${cuota.id}}" class="btn btn-edit-premium btn-sm">Editar</a>
                                         <a th:href="@{'/cuotas/eliminar/' + ${cuota.id}}"
                                            class="btn btn-delete-premium btn-sm"
