@@ -31,11 +31,11 @@
                 <div class="col-lg-7">
                     <div class="hero-card">
                         <span class="hero-badge">Premium Fitness</span>
-                        <h2>Bienvenido al sistema de gestion del gimnasio Equinox</h2>
-                        <p>Administrár socios, cuotas y pagos.</p>
+                        <h2>Bienvenido al sistema de gestión del gimnasio Equinox</h2>
+                        <p>Administrá socios, cuotas, pagos y vencimientos desde un flujo más simple.</p>
                         <div class="hero-actions">
-                            <a th:href="@{/socios}" class="btn btn-gold">Ver socios</a>
-                            <a th:href="@{/pagos}" class="btn btn-outline-gold">Ver pagos</a>
+                            <a th:href="@{/cobrar}" class="btn btn-gold">Cobrar ahora</a>
+                            <a th:href="@{/socios}" class="btn btn-outline-gold">Ver socios</a>
                         </div>
                     </div>
                 </div>
@@ -44,6 +44,16 @@
                         <img th:src="@{/img/logo-equinox.png}" alt="Equinox Gym" class="hero-image">
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <section class="form-section" th:if="${resumen.cumpleaniosHoy != null and !#lists.isEmpty(resumen.cumpleaniosHoy)}">
+            <div class="premium-alert-success">
+                <strong>Recordatorio de cumpleaños:</strong>
+                <span th:each="socio, iter : ${resumen.cumpleaniosHoy}">
+                    <span th:text="${socio.nombreCompleto}">Socio</span><span th:if="${!iter.last}">, </span>
+                </span>
+                cumple años hoy.
             </div>
         </section>
 
@@ -76,12 +86,12 @@
                 <div class="col-md-4">
                     <div class="metric-card metric-card-highlight">
                         <span class="metric-label">Recaudado del mes</span>
-                        <div class="metric-value" th:text="'$ ' + ${resumen.recaudadoMes}">$ 0</div>
+                        <div class="metric-value" th:text="' $ ' + ${resumen.recaudadoMes}">$ 0</div>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="metric-card">
-                        <span class="metric-label">Cuotas pagadas del mes</span>
+                        <span class="metric-label">Pagos registrados del mes</span>
                         <div class="metric-value" th:text="${resumen.cuotasPagadasMes}">0</div>
                     </div>
                 </div>
@@ -100,8 +110,18 @@
                     <div class="module-card">
                         <div class="module-accent"></div>
                         <div class="module-body">
+                            <h3>Cobro rápido</h3>
+                            <p>Buscá por nombre o DNI, revisá vencimiento y registrá el pago desde una sola pantalla.</p>
+                            <a th:href="@{/cobrar}" class="btn btn-module">Ir al módulo</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="module-card">
+                        <div class="module-accent"></div>
+                        <div class="module-body">
                             <h3>Gestión de Socios</h3>
-                            <p>Administrá altas, ediciones, búsquedas y el estado general de los socios registrados.</p>
+                            <p>Administrá datos personales, contacto, cumpleaños, planes y observaciones internas.</p>
                             <a th:href="@{/socios}" class="btn btn-module">Ir al módulo</a>
                         </div>
                     </div>
@@ -110,18 +130,8 @@
                     <div class="module-card">
                         <div class="module-accent"></div>
                         <div class="module-body">
-                            <h3>Gestión de Cuotas</h3>
-                            <p>Controlá vencimientos, estados y administración de cuotas mensuales del gimnasio.</p>
-                            <a th:href="@{/cuotas}" class="btn btn-module">Ir al módulo</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="module-card">
-                        <div class="module-accent"></div>
-                        <div class="module-body">
-                            <h3>Gestión de Pagos</h3>
-                            <p>Registrá pagos, consultá el historial y llevá control de ingresos del sistema.</p>
+                            <h3>Historial de Pagos</h3>
+                            <p>Consultá movimientos registrados y controlá la recaudación real del sistema.</p>
                             <a th:href="@{/pagos}" class="btn btn-module">Ir al módulo</a>
                         </div>
                     </div>
