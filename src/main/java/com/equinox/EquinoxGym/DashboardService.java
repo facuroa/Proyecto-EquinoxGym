@@ -5,19 +5,23 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class DashboardService {
 
     private final SocioRepository socioRepository;
     private final CuotaRepository cuotaRepository;
+    private final PagoRepository pagoRepository;
     private final SocioService socioService;
 
     public DashboardService(SocioRepository socioRepository,
                             CuotaRepository cuotaRepository,
+                            PagoRepository pagoRepository,
                             SocioService socioService) {
         this.socioRepository = socioRepository;
         this.cuotaRepository = cuotaRepository;
+        this.pagoRepository = pagoRepository;
         this.socioService = socioService;
     }
 
@@ -39,11 +43,18 @@ public class DashboardService {
         long sociosInactivos = socioRepository.countByEstado(EstadoSocio.INACTIVO);
 
         long cuotasVencidas = cuotaRepository.countByEstado(EstadoCuota.VENCIDA);
-        long cuotasPagadasMes = cuotaRepository.countByEstadoAndFechaPagoBetween(
-                EstadoCuota.PAGADA, inicioMes, finMes
-        );
+        long cuotasPagadasMes = pagoRepository.countByFechaPagoBetween(inicioMes, finMes);
 
-        BigDecimal recaudadoMes = cuotaRepository.sumarRecaudadoDelPeriodo(inicioMes, finMes);
+        BigDecimal recaudadoMes = pagoRepository.obtenerTotalRecaudadoDelMes(inicioMes, finMes);
+        if (recaudadoMes == null) {
+            recaudadoMes = BigDecimal.ZERO;
+        }
+
+        List<Socio> cumpleaniosHoy = socios.stream()
+                .filter(s -> s.getFechaNacimiento() != null)
+                .filter(s -> s.getFechaNacimiento().getDayOfMonth() == hoy.getDayOfMonth()
+                        && s.getFechaNacimiento().getMonth() == hoy.getMonth())
+                .collect(Collectors.toList());
 
         DashboardDTO dto = new DashboardDTO();
         dto.setTotalSocios(totalSocios);
@@ -53,6 +64,7 @@ public class DashboardService {
         dto.setCuotasVencidas(cuotasVencidas);
         dto.setCuotasPagadasMes(cuotasPagadasMes);
         dto.setRecaudadoMes(recaudadoMes);
+        dto.setCumpleaniosHoy(cumpleaniosHoy);
 
         return dto;
     }
