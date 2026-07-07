@@ -18,7 +18,7 @@
             <div>
                 <p class="topbar-label">Administración de cuotas</p>
                 <h1 class="topbar-title">Gestión de Cuotas</h1>
-                <p class="topbar-subtitle">Controlá vencimientos, estados y administración de cuotas mensuales.</p>
+                <p class="topbar-subtitle">Controlá vencimientos, pagos y renovaciones de cuotas.</p>
             </div>
             <div class="topbar-status">
                 <span>Cuotas visibles</span>
@@ -35,7 +35,7 @@
                             <div class="input-group premium-search-group">
                                 <select id="estado" class="form-select premium-input premium-select" name="estado">
                                     <option value="TODAS" th:selected="${estadoSeleccionado == 'TODAS'}">Todas las cuotas</option>
-                                    <option value="PENDIENTE" th:selected="${estadoSeleccionado == 'PENDIENTE'}">Pendientes</option>
+                                    <option value="PENDIENTE" th:selected="${estadoSeleccionado == 'PENDIENTE'}">Vigentes / por vencer</option>
                                     <option value="PAGADA" th:selected="${estadoSeleccionado == 'PAGADA'}">Pagadas</option>
                                     <option value="VENCIDA" th:selected="${estadoSeleccionado == 'VENCIDA'}">Vencidas</option>
                                 </select>
@@ -62,7 +62,7 @@
                     <div class="metric-card metric-card-highlight">
                         <span class="metric-label">Filtro aplicado</span>
                         <div class="metric-value metric-value-text"
-                             th:text="${estadoSeleccionado != null ? estadoSeleccionado : 'TODAS'}">
+                             th:text="${estadoSeleccionado == 'PENDIENTE' ? 'VIGENTES' : (estadoSeleccionado != null ? estadoSeleccionado : 'TODAS')}">
                             TODAS
                         </div>
                     </div>
@@ -88,7 +88,7 @@
                                 <th>Días</th>
                                 <th>Fecha de pago</th>
                                 <th>Monto</th>
-                                <th>Estado</th>
+                                <th>Estado visible</th>
                                 <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
@@ -107,7 +107,7 @@
                                 <td th:text="${'$ ' + cuota.monto}">$ 0</td>
                                 <td>
                                     <span th:if="${cuota.estado == T(com.equinox.EquinoxGym.EstadoCuota).PENDIENTE}"
-                                          class="status-badge status-badge-warning">Pendiente</span>
+                                          class="status-badge status-badge-success">Vigente</span>
                                     <span th:if="${cuota.estado == T(com.equinox.EquinoxGym.EstadoCuota).PAGADA}"
                                           class="status-badge status-badge-success">Pagada</span>
                                     <span th:if="${cuota.estado == T(com.equinox.EquinoxGym.EstadoCuota).VENCIDA}"
