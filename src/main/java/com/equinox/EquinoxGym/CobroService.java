@@ -66,8 +66,8 @@ public class CobroService {
 
     /**
      * Alta rápida de un socio nuevo: lo crea, le asigna un plan y genera
-     * su primera cuota (queda pendiente de cobro, se cobra después desde
-     * el panel de "cuota pendiente" en la misma pantalla).
+     * su primera cuota. Si se indica cobro inicial, registra el pago de esa
+     * primera cuota y genera automáticamente la próxima renovación.
      */
     public Socio altaRapidaConPlan(String nombre,
                                    String apellido,
@@ -77,6 +77,22 @@ public class CobroService {
                                    LocalDate fechaNacimiento,
                                    Plan plan,
                                    LocalDate fechaInicio) {
+        return altaRapidaConPlanYCobro(
+                nombre, apellido, dni, telefono, email, fechaNacimiento,
+                plan, fechaInicio, false, null, null);
+    }
+
+    public Socio altaRapidaConPlanYCobro(String nombre,
+                                         String apellido,
+                                         String dni,
+                                         String telefono,
+                                         String email,
+                                         LocalDate fechaNacimiento,
+                                         Plan plan,
+                                         LocalDate fechaInicio,
+                                         boolean cobrarAlta,
+                                         BigDecimal montoInicial,
+                                         String medioPagoInicial) {
 
         Socio socio = new Socio();
         socio.setNombre(nombre);
@@ -89,21 +105,24 @@ public class CobroService {
 
         Socio socioGuardado = socioRepository.save(socio);
 
-        Cuota primeraCuota = asignarPlanYCrearPrimeraCuota(socioGuardado, plan, fechaInicio);
-        socioRepository.save(socioGuardado);
-        cuotaRepository.save(primeraCuota);
+        Cuota primeraCuota = asignarPlanAExistente(socioGuardado, plan, fechaInicio);
+
+        if (cobrarAlta) {
+            BigDecimal montoACobrar = montoInicial != null ? montoInicial : plan.getPrecio();
+            registrarPago(primeraCuota, montoACobrar, medioPagoInicial);
+        }
 
         return socioGuardado;
     }
 
     /**
-     * Asigna un plan a un socio existente que no tenía uno activo,
-     * y le genera la primera cuota de ese plan.
+     * Asigna un plan a un socio existente y genera la primera cuota de ese plan.
+     * Devuelve la cuota creada para poder cobrarla inmediatamente si corresponde.
      */
-    public void asignarPlanAExistente(Socio socio, Plan plan, LocalDate fechaInicio) {
+    public Cuota asignarPlanAExistente(Socio socio, Plan plan, LocalDate fechaInicio) {
         Cuota primeraCuota = asignarPlanYCrearPrimeraCuota(socio, plan, fechaInicio);
         socioRepository.save(socio);
-        cuotaRepository.save(primeraCuota);
+        return cuotaRepository.save(primeraCuota);
     }
 
     private Cuota asignarPlanYCrearPrimeraCuota(Socio socio, Plan plan, LocalDate fechaInicio) {
