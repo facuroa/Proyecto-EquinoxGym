@@ -56,7 +56,7 @@
                 <div class="premium-table-header">
                     <div>
                         <h3>Listado de socios</h3>
-                        <span>Consulta y administración general</span>
+                        <span>Consulta general, estado de cuota y acceso rápido al cobro</span>
                     </div>
                 </div>
 
@@ -66,7 +66,7 @@
                             <tr>
                                 <th>Socio</th>
                                 <th>DNI</th>
-                                <th>Teléfono</th>
+                                <th>Contacto</th>
                                 <th>Plan</th>
                                 <th>Vence plan</th>
                                 <th>Cuota</th>
@@ -81,19 +81,28 @@
                             <tr th:each="socio : ${socios}">
                                 <td th:text="${socio.apellido + ', ' + socio.nombre}">Pérez, Juan</td>
                                 <td th:text="${socio.dni}">12345678</td>
-                                <td th:text="${socio.telefono != null ? socio.telefono : '-'}">-</td>
+                                <td>
+                                    <div th:text="${socio.telefono != null and !socio.telefono.isEmpty() ? socio.telefono : '-'}">-</div>
+                                    <small class="premium-help-text" th:if="${socio.email != null and !socio.email.isEmpty()}" th:text="${socio.email}">email</small>
+                                </td>
                                 <td th:text="${socio.plan != null ? socio.plan.nombre : '-'}">-</td>
-                                <td th:text="${socio.fechaVencimientoPlan != null ? socio.fechaVencimientoPlan : '-'}">-</td>
+                                <td>
+                                    <span th:if="${#lists.isEmpty(socio.cuotas)}">-</span>
+                                    <span th:unless="${#lists.isEmpty(socio.cuotas)}">
+                                        <span th:text="${socio.fechaVencimientoPlan != null ? socio.fechaVencimientoPlan : '-'}">-</span><br>
+                                        <small class="premium-help-text" th:text="${socio.textoVencimientoPlan}">Faltan días</small>
+                                    </span>
+                                </td>
 
                                 <td>
                                     <span th:with="impagas=${socio.cuotas.?[fechaPago == null]}">
                                         <span th:if="${#lists.isEmpty(socio.cuotas)}" class="status-badge">Sin cuotas</span>
                                         <span th:if="${!#lists.isEmpty(socio.cuotas) and #lists.isEmpty(impagas)}"
-                                              class="status-badge status-badge-success">Al día</span>
+                                              class="status-badge status-badge-success">Pagada</span>
                                         <span th:if="${!#lists.isEmpty(impagas)}"
                                               th:with="tieneVencida=${!#lists.isEmpty(impagas.?[estado != null and estado.name() == 'VENCIDA'])}">
                                             <span th:if="${tieneVencida}" class="status-badge status-badge-danger">Vencida</span>
-                                            <span th:unless="${tieneVencida}" class="status-badge status-badge-warning">Sin cobrar</span>
+                                            <span th:unless="${tieneVencida}" class="status-badge status-badge-success">Vigente</span>
                                         </span>
                                     </span>
                                 </td>
@@ -108,6 +117,7 @@
                                 </td>
                                 <td class="text-center">
                                     <div class="action-buttons-premium">
+                                        <a th:href="@{/cobrar(socioId=${socio.id})}" class="btn btn-gold-search btn-sm">Cobrar</a>
                                         <a th:href="@{/socios/editar/{id}(id=${socio.id})}" class="btn btn-edit-premium btn-sm">Editar</a>
                                         <a th:href="@{/socios/eliminar/{id}(id=${socio.id})}"
                                            class="btn btn-delete-premium btn-sm"
