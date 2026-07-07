@@ -85,7 +85,10 @@ public class CobroController {
                              @RequestParam(required = false) String email,
                              @RequestParam(required = false) String fechaNacimiento,
                              @RequestParam Long planId,
-                             @RequestParam(required = false) String fechaInicioPlan) {
+                             @RequestParam(required = false) String fechaInicioPlan,
+                             @RequestParam(value = "cobrarAlta", required = false) Boolean cobrarAlta,
+                             @RequestParam(value = "montoInicial", required = false) BigDecimal montoInicial,
+                             @RequestParam(value = "medioPagoInicial", required = false) String medioPagoInicial) {
 
         if (dni == null || dni.trim().isEmpty()) {
             return "redirect:/cobrar?altaRapida=true&error=dniObligatorio";
@@ -104,11 +107,18 @@ public class CobroController {
         }
 
         LocalDate nacimiento = parseFechaONull(fechaNacimiento);
+        boolean cobrarAltaMarcado = Boolean.TRUE.equals(cobrarAlta);
 
-        Socio socio = cobroService.altaRapidaConPlan(
-                nombre, apellido, dni, telefono, email, nacimiento, plan, inicio);
+        try {
+            Socio socio = cobroService.altaRapidaConPlanYCobro(
+                    nombre, apellido, dni, telefono, email, nacimiento, plan, inicio,
+                    cobrarAltaMarcado, montoInicial, medioPagoInicial);
 
-        return "redirect:/cobrar?socioId=" + socio.getId();
+            String mensaje = cobrarAltaMarcado ? "pagado" : "cuotaGenerada";
+            return "redirect:/cobrar?socioId=" + socio.getId() + "&mensaje=" + mensaje;
+        } catch (IllegalArgumentException e) {
+            return "redirect:/cobrar?altaRapida=true&error=pagoInvalido";
+        }
     }
 
     /** Asigna un plan a un socio existente que no tenía uno activo. */
@@ -129,7 +139,46 @@ public class CobroController {
 
         cobroService.asignarPlanAExistente(socio, plan, inicio);
 
-        return "redirect:/cobrar?socioId=" + socioId;
+        return "redirect:/cobrar?socioId=" + socioId + "&mensaje=cuotaGenerada";
+    }
+
+    /** Genera la primera cuota para socios que ya tienen plan pero quedaron sin cuotas. */
+    @PostMapping("/generar-cuota-inicial")
+    public String generarCuotaInicial(@RequestParam Long socioId,
+                                      @RequestParam(required = false) String fechaInicioPlan,
+                                      @RequestParam(value = "cobrarAlta", required = false) Boolean cobrarAlta,
+                                      @RequestParam(value = "montoInicial", required = false) BigDecimal montoInicial,
+                                      @RequestParam(value = "medioPagoInicial", required = false) String medioPagoInicial) {
+
+        Socio socio = socioRepository.findById(socioId)
+                .orElseThrow(() -> new RuntimeException("Socio no encontrado"));
+
+        if (socio.getPlan() == null) {
+            return "redirect:/cobrar?socioId=" + socioId + "&error=socioSinPlan";
+        }
+
+        if (socio.getCuotas() != null && !socio.getCuotas().isEmpty()) {
+            return "redirect:/cobrar?socioId=" + socioId + "&error=cuotaExistente";
+        }
+
+        LocalDate inicio = parseFechaONull(fechaInicioPlan);
+        if (inicio == null) {
+            inicio = LocalDate.now();
+        }
+
+        boolean cobrarAltaMarcado = Boolean.TRUE.equals(cobrarAlta);
+
+        try {
+            Cuota cuotaInicial = cobroService.asignarPlanAExistente(socio, socio.getPlan(), inicio);
+            if (cobrarAltaMarcado) {
+                BigDecimal montoACobrar = montoInicial != null ? montoInicial : socio.getPlan().getPrecio();
+                cobroService.registrarPago(cuotaInicial, montoACobrar, medioPagoInicial);
+                return "redirect:/cobrar?socioId=" + socioId + "&mensaje=pagado";
+            }
+            return "redirect:/cobrar?socioId=" + socioId + "&mensaje=cuotaGenerada";
+        } catch (IllegalArgumentException e) {
+            return "redirect:/cobrar?socioId=" + socioId + "&error=pagoInvalido";
+        }
     }
 
     /** Cobra la cuota pendiente que se le mostró al usuario en pantalla. */
