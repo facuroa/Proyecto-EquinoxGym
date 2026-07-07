@@ -80,27 +80,29 @@ public class PagoController {
             agregarErrorPago(model, pago, "Debe seleccionar una cuota.");
             return "nuevo-pago";
         }
-        if (pago.getMonto() == null) {
-            agregarErrorPago(model, pago, "El monto es obligatorio.");
-            return "nuevo-pago";
-        }
-        if (pago.getMedioPago() == null || pago.getMedioPago().trim().isEmpty()) {
-            agregarErrorPago(model, pago, "El medio de pago es obligatorio.");
-            return "nuevo-pago";
-        }
 
-        // Toda la lógica de "marcar cuota como pagada + generar la siguiente"
-        // vive ahora en CobroService, así la pantalla de Pagos y la pantalla
-        // de Cobro rápido usan exactamente la misma regla de negocio.
-        cobroService.registrarPagoPorId(cuotaId, pago.getMonto(), pago.getMedioPago());
+        try {
+            cobroService.registrarPagoPorId(cuotaId, pago.getMonto(), pago.getMedioPago());
+        } catch (IllegalStateException e) {
+            agregarErrorPago(model, pago, "Esta cuota ya fue pagada. No se puede registrar dos veces.");
+            return "nuevo-pago";
+        } catch (IllegalArgumentException e) {
+            agregarErrorPago(model, pago, e.getMessage());
+            return "nuevo-pago";
+        }
 
         return "redirect:/pagos";
     }
 
     private void agregarErrorPago(Model model, Pago pago, String mensaje) {
+        List<Cuota> cuotasImpagas = cuotaRepository.findByFechaPagoIsNullOrderByFechaVencimientoAsc();
+        for (Cuota cuota : cuotasImpagas) {
+            cuotaService.actualizarEstadoCuota(cuota);
+        }
+        cuotaRepository.saveAll(cuotasImpagas);
+
         model.addAttribute("pago", pago);
-        model.addAttribute("cuotasPendientes",
-                cuotaRepository.findByFechaPagoIsNullOrderByFechaVencimientoAsc());
+        model.addAttribute("cuotasPendientes", cuotasImpagas);
         model.addAttribute("error", mensaje);
     }
 }
