@@ -16,13 +16,16 @@ public class CobroController {
     private final SocioRepository socioRepository;
     private final PlanRepository planRepository;
     private final CobroService cobroService;
+    private final SocioService socioService;
 
     public CobroController(SocioRepository socioRepository,
                            PlanRepository planRepository,
-                           CobroService cobroService) {
+                           CobroService cobroService,
+                           SocioService socioService) {
         this.socioRepository = socioRepository;
         this.planRepository = planRepository;
         this.cobroService = cobroService;
+        this.socioService = socioService;
     }
 
     /**
@@ -45,6 +48,9 @@ public class CobroController {
         if (socioId != null) {
             Socio socio = socioRepository.findById(socioId).orElse(null);
             if (socio != null) {
+                socioService.actualizarEstadoSocio(socio);
+                socioRepository.save(socio);
+
                 model.addAttribute("socio", socio);
                 Optional<Cuota> cuotaPendiente = cobroService.obtenerCuotaPendienteMasAntigua(socio);
                 model.addAttribute("cuotaPendiente", cuotaPendiente.orElse(null));
@@ -76,6 +82,8 @@ public class CobroController {
                              @RequestParam String apellido,
                              @RequestParam String dni,
                              @RequestParam(required = false) String telefono,
+                             @RequestParam(required = false) String email,
+                             @RequestParam(required = false) String fechaNacimiento,
                              @RequestParam Long planId,
                              @RequestParam(required = false) String fechaInicioPlan) {
 
@@ -90,11 +98,15 @@ public class CobroController {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
 
-        LocalDate inicio = (fechaInicioPlan != null && !fechaInicioPlan.isBlank())
-                ? LocalDate.parse(fechaInicioPlan)
-                : LocalDate.now();
+        LocalDate inicio = parseFechaONull(fechaInicioPlan);
+        if (inicio == null) {
+            inicio = LocalDate.now();
+        }
 
-        Socio socio = cobroService.altaRapidaConPlan(nombre, apellido, dni, telefono, plan, inicio);
+        LocalDate nacimiento = parseFechaONull(fechaNacimiento);
+
+        Socio socio = cobroService.altaRapidaConPlan(
+                nombre, apellido, dni, telefono, email, nacimiento, plan, inicio);
 
         return "redirect:/cobrar?socioId=" + socio.getId();
     }
@@ -110,9 +122,10 @@ public class CobroController {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
 
-        LocalDate inicio = (fechaInicioPlan != null && !fechaInicioPlan.isBlank())
-                ? LocalDate.parse(fechaInicioPlan)
-                : LocalDate.now();
+        LocalDate inicio = parseFechaONull(fechaInicioPlan);
+        if (inicio == null) {
+            inicio = LocalDate.now();
+        }
 
         cobroService.asignarPlanAExistente(socio, plan, inicio);
 
@@ -125,9 +138,20 @@ public class CobroController {
                         @RequestParam Long socioId,
                         @RequestParam BigDecimal monto,
                         @RequestParam String medioPago) {
+        try {
+            cobroService.registrarPagoPorId(cuotaId, monto, medioPago);
+            return "redirect:/cobrar?socioId=" + socioId + "&mensaje=pagado";
+        } catch (IllegalStateException e) {
+            return "redirect:/cobrar?socioId=" + socioId + "&error=cuotaYaPagada";
+        } catch (IllegalArgumentException e) {
+            return "redirect:/cobrar?socioId=" + socioId + "&error=pagoInvalido";
+        }
+    }
 
-        cobroService.registrarPagoPorId(cuotaId, monto, medioPago);
-
-        return "redirect:/cobrar?socioId=" + socioId + "&mensaje=pagado";
+    private LocalDate parseFechaONull(String fecha) {
+        if (fecha == null || fecha.isBlank()) {
+            return null;
+        }
+        return LocalDate.parse(fecha);
     }
 }
