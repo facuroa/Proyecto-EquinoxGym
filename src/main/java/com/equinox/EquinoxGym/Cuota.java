@@ -13,6 +13,7 @@ import jakarta.persistence.Transient;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 public class Cuota {
@@ -97,5 +98,30 @@ public class Cuota {
 
     public boolean estaPagada() {
         return fechaPago != null;
+    }
+
+    public Long getDiasParaVencimiento() {
+        if (fechaVencimiento == null) {
+            return null;
+        }
+        return ChronoUnit.DAYS.between(LocalDate.now(), fechaVencimiento);
+    }
+
+    public String getTextoVencimiento() {
+        Long dias = getDiasParaVencimiento();
+        if (dias == null) {
+            return "-";
+        }
+        if (fechaPago != null) {
+            return "Pagada";
+        }
+        if (dias == 0) {
+            return "Vence hoy";
+        }
+        if (dias > 0) {
+            return dias == 1 ? "Falta 1 día" : "Faltan " + dias + " días";
+        }
+        long atraso = Math.abs(dias);
+        return atraso == 1 ? "Vencida hace 1 día" : "Vencida hace " + atraso + " días";
     }
 }
