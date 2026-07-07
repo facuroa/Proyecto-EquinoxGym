@@ -51,6 +51,10 @@ public class CobroService {
     }
 
     public Optional<Cuota> obtenerCuotaPendienteMasAntigua(Socio socio) {
+        if (socio == null || socio.getCuotas() == null) {
+            return Optional.empty();
+        }
+
         for (Cuota c : socio.getCuotas()) {
             cuotaService.actualizarEstadoCuota(c);
         }
@@ -65,14 +69,22 @@ public class CobroService {
      * su primera cuota (queda pendiente de cobro, se cobra después desde
      * el panel de "cuota pendiente" en la misma pantalla).
      */
-    public Socio altaRapidaConPlan(String nombre, String apellido, String dni, String telefono,
-                                   Plan plan, LocalDate fechaInicio) {
+    public Socio altaRapidaConPlan(String nombre,
+                                   String apellido,
+                                   String dni,
+                                   String telefono,
+                                   String email,
+                                   LocalDate fechaNacimiento,
+                                   Plan plan,
+                                   LocalDate fechaInicio) {
 
         Socio socio = new Socio();
         socio.setNombre(nombre);
         socio.setApellido(apellido);
         socio.setDni(dni);
         socio.setTelefono(telefono);
+        socio.setEmail(email);
+        socio.setFechaNacimiento(fechaNacimiento);
         socio.setEstado(EstadoSocio.ACTIVO);
 
         Socio socioGuardado = socioRepository.save(socio);
@@ -112,15 +124,17 @@ public class CobroService {
 
     public void registrarPagoPorId(Long cuotaId, BigDecimal monto, String medioPago) {
         Cuota cuota = cuotaRepository.findById(cuotaId)
-                .orElseThrow(() -> new RuntimeException("Cuota no encontrada"));
+                .orElseThrow(() -> new IllegalArgumentException("Cuota no encontrada"));
         registrarPago(cuota, monto, medioPago);
     }
 
     public Pago registrarPago(Cuota cuota, BigDecimal monto, String medioPago) {
+        validarPago(cuota, monto, medioPago);
+
         Pago pago = new Pago();
         pago.setCuota(cuota);
         pago.setMonto(monto);
-        pago.setMedioPago(medioPago);
+        pago.setMedioPago(medioPago.trim());
         pago.setFechaPago(LocalDate.now());
         pagoRepository.save(pago);
 
@@ -140,6 +154,21 @@ public class CobroService {
         }
 
         return pago;
+    }
+
+    private void validarPago(Cuota cuota, BigDecimal monto, String medioPago) {
+        if (cuota == null) {
+            throw new IllegalArgumentException("La cuota no existe.");
+        }
+        if (cuota.getFechaPago() != null) {
+            throw new IllegalStateException("Esta cuota ya fue pagada.");
+        }
+        if (monto == null || monto.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("El monto debe ser mayor a cero.");
+        }
+        if (medioPago == null || medioPago.trim().isEmpty()) {
+            throw new IllegalArgumentException("Debe seleccionar un medio de pago.");
+        }
     }
 
     private void generarSiguienteCuota(Socio socio, Cuota cuotaPagada) {
