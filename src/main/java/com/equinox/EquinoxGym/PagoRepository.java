@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface PagoRepository extends JpaRepository<Pago, Long> {
 
@@ -27,4 +28,7 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     List<Pago> findByCuotaSocioIdAndFechaPago(Long socioId, LocalDate fechaPago);
 
     List<Pago> findByCuotaSocioIdAndMedioPagoAndFechaPago(Long socioId, String medioPago, LocalDate fechaPago);
+
+    @Transactional
+    void deleteByCuota_Id(Long cuotaId);
 }

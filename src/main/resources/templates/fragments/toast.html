@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="toast(tipo, texto)" th:if="${texto != null}"
+     th:class="${tipo == 'error'} ? 'toast-notification toast-error' : 'toast-notification toast-success'"
+     th:text="${texto}">
+</div>
+</body>
+</html>

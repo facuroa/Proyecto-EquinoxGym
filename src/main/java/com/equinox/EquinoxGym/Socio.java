@@ -1,14 +1,7 @@
 package com.equinox.EquinoxGym;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-
+import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,65 +20,49 @@ public class Socio {
     @Enumerated(EnumType.STRING)
     private EstadoSocio estado;
 
-    @OneToMany(mappedBy = "socio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToOne
+    @JoinColumn(name = "plan_id")
+    private Plan plan;
+
+    private LocalDate fechaInicioPlan;
+    private LocalDate fechaVencimientoPlan;
+
+    @OneToMany(mappedBy = "socio", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Cuota> cuotas = new ArrayList<>();
 
-    public Socio() {
-    }
+    public Socio() {}
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public String getNombre() {
-        return nombre;
-    }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
 
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
+    public String getApellido() { return apellido; }
+    public void setApellido(String apellido) { this.apellido = apellido; }
 
-    public String getApellido() {
-        return apellido;
-    }
+    public String getDni() { return dni; }
+    public void setDni(String dni) { this.dni = dni; }
 
-    public void setApellido(String apellido) {
-        this.apellido = apellido;
-    }
+    public String getTelefono() { return telefono; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
 
-    public String getDni() {
-        return dni;
-    }
+    public EstadoSocio getEstado() { return estado; }
+    public void setEstado(EstadoSocio estado) { this.estado = estado; }
 
-    public void setDni(String dni) {
-        this.dni = dni;
-    }
+    public Plan getPlan() { return plan; }
+    public void setPlan(Plan plan) { this.plan = plan; }
 
-    public String getTelefono() {
-        return telefono;
-    }
+    public LocalDate getFechaInicioPlan() { return fechaInicioPlan; }
+    public void setFechaInicioPlan(LocalDate fechaInicioPlan) { this.fechaInicioPlan = fechaInicioPlan; }
 
-    public void setTelefono(String telefono) {
-        this.telefono = telefono;
-    }
+    public LocalDate getFechaVencimientoPlan() { return fechaVencimientoPlan; }
+    public void setFechaVencimientoPlan(LocalDate fechaVencimientoPlan) { this.fechaVencimientoPlan = fechaVencimientoPlan; }
 
-    public EstadoSocio getEstado() {
-        return estado;
-    }
-
-    public void setEstado(EstadoSocio estado) {
-        this.estado = estado;
-    }
-
-    public List<Cuota> getCuotas() {
-        return cuotas;
-    }
-
-    public void setCuotas(List<Cuota> cuotas) {
-        this.cuotas = cuotas;
-    }
+    public List<Cuota> getCuotas() { return cuotas; }
+    public void setCuotas(List<Cuota> cuotas) { this.cuotas = cuotas; }
 
     public String getNombreCompleto() {
-        return nombre + " " + apellido;
+        return (nombre != null ? nombre : "") + " " + (apellido != null ? apellido : "");
     }
 }

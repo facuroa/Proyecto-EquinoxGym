@@ -2,77 +2,90 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Cuota - Equinox Gym</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/estilos.css}">
 </head>
-<body class="bg-light">
+<body class="dashboard-body">
+<div class="dashboard-wrapper">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-        <span class="navbar-brand">Equinox Gym</span>
-        <a href="/cuotas" class="btn btn-outline-light btn-sm">Volver</a>
-    </div>
-</nav>
+    <aside th:replace="~{fragments/sidebar :: sidebar('cuotas')}"></aside>
 
-<div class="container mt-4">
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <h2 class="mb-4">Editar Cuota</h2>
+    <main class="main-content">
 
-            <form th:action="@{'/cuotas/actualizar/' + ${cuota.id}}" th:object="${cuota}" method="post">
-                <input type="hidden" th:field="*{id}">
+        <header class="topbar">
+            <div>
+                <p class="topbar-label">Administración de cuotas</p>
+                <h1 class="topbar-title">Editar Cuota</h1>
+                <p class="topbar-subtitle">Modificá los datos de la cuota seleccionada.</p>
+            </div>
+            <div class="topbar-status">
+                <span>Acción actual</span>
+                <strong>Edición</strong>
+            </div>
+        </header>
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Socio</label>
-                        <select class="form-select" th:field="*{socioId}">
-                            <option value="">Seleccione un socio</option>
-                            <option th:each="s : ${socios}"
-                                    th:value="${s.id}"
-                                    th:text="${s.nombreCompleto}">
-                            </option>
-                        </select>
-                        <div class="text-danger mt-1"
-                             th:if="${#fields.hasErrors('socioId')}"
-                             th:errors="*{socioId}"></div>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Monto</label>
-                        <input type="number" step="0.01" min="0" class="form-control"
-                               th:field="*{monto}" placeholder="Ingrese el monto">
-                        <div class="text-danger mt-1"
-                             th:if="${#fields.hasErrors('monto')}"
-                             th:errors="*{monto}"></div>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Fecha de vencimiento</label>
-                        <input type="date" class="form-control" th:field="*{fechaVencimiento}">
-                        <div class="text-danger mt-1"
-                             th:if="${#fields.hasErrors('fechaVencimiento')}"
-                             th:errors="*{fechaVencimiento}"></div>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Fecha de pago</label>
-                        <input type="date" class="form-control" th:field="*{fechaPago}" readonly>
-                        <small class="text-muted">La fecha de pago se registra desde el módulo de pagos.</small>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Estado actual</label>
-                        <input type="text" class="form-control" th:value="${cuota.estado}" readonly>
-                    </div>
+        <section class="form-section">
+            <div class="premium-form-card">
+                <div class="premium-form-header">
+                    <h3>Datos de la cuota</h3>
+                    <span>El estado y la fecha de pago se actualizan automáticamente</span>
                 </div>
 
-                <button type="submit" class="btn btn-success">Actualizar cuota</button>
-                <a href="/cuotas" class="btn btn-secondary">Cancelar</a>
-            </form>
-        </div>
-    </div>
-</div>
+                <form th:action="@{'/cuotas/actualizar/' + ${cuota.id}}" th:object="${cuota}" method="post" class="premium-form-body">
+                    <input type="hidden" th:field="*{id}">
 
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">Socio</label>
+                            <select class="form-select premium-input premium-select" th:field="*{socioId}">
+                                <option value="">Seleccione un socio</option>
+                                <option th:each="s : ${socios}"
+                                        th:value="${s.id}"
+                                        th:text="${s.nombreCompleto}">
+                                </option>
+                            </select>
+                            <div class="premium-error" th:if="${#fields.hasErrors('socioId')}" th:errors="*{socioId}"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">Monto ($)</label>
+                            <input type="number" step="0.01" min="0" class="form-control premium-input"
+                                   th:field="*{monto}" placeholder="Ingrese el monto">
+                            <div class="premium-error" th:if="${#fields.hasErrors('monto')}" th:errors="*{monto}"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">Fecha de vencimiento</label>
+                            <input type="date" class="form-control premium-input" th:field="*{fechaVencimiento}">
+                            <div class="premium-error" th:if="${#fields.hasErrors('fechaVencimiento')}" th:errors="*{fechaVencimiento}"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">Fecha de pago</label>
+                            <input type="date" class="form-control premium-input" th:field="*{fechaPago}" readonly
+                                   style="opacity: 0.5; cursor: not-allowed;">
+                            <small class="premium-help-text">Se registra desde el módulo de Pagos.</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">Estado actual</label>
+                            <input type="text" class="form-control premium-input" th:value="${cuota.estado}" readonly
+                                   style="opacity: 0.5; cursor: not-allowed;">
+                            <small class="premium-help-text">Se actualiza automáticamente según la fecha.</small>
+                        </div>
+                    </div>
+
+                    <div class="premium-form-actions">
+                        <button type="submit" class="btn btn-gold-action">Guardar cambios</button>
+                        <a th:href="@{/cuotas}" class="btn btn-outline-gold-soft">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+    </main>
+</div>
 </body>
 </html>

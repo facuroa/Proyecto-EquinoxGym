@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cobrar - Equinox Gym</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body class="dashboard-body">
+<div class="dashboard-wrapper">
+
+    <aside th:replace="~{fragments/sidebar :: sidebar('cobrar')}"></aside>
+
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <p class="topbar-label">Mostrador</p>
+                <h1 class="topbar-title">Cobrar</h1>
+                <p class="topbar-subtitle">Buscá un socio o creá uno nuevo para registrar el cobro en un solo paso.</p>
+            </div>
+            <div class="topbar-status">
+                <span>Acción rápida</span>
+                <strong>Cobro de cuota</strong>
+            </div>
+        </header>
+
+        <!-- Mensajes de éxito / error -->
+        <div th:if="${mensaje == 'pagado'}" class="premium-alert-success mb-4">
+            Pago registrado correctamente. Si el socio tiene un plan activo, ya se generó la próxima cuota.
+        </div>
+        <div th:if="${error == 'dniDuplicado'}" class="premium-alert-danger mb-4">
+            Ya existe un socio con ese DNI. Buscalo arriba en vez de crear uno nuevo.
+        </div>
+        <div th:if="${error == 'dniObligatorio'}" class="premium-alert-danger mb-4">
+            El DNI es obligatorio para crear un socio.
+        </div>
+
+        <!-- Buscador -->
+        <section class="form-section">
+            <div class="premium-form-card cobro-search-card">
+    <div class="premium-form-header">
+        <h3>Buscar socio</h3>
+                    <span>Escribí nombre, apellido o DNI</span>
+                </div>
+                <div class="premium-form-body">
+                    <div class="cobro-buscador-wrapper">
+                        <input type="text"
+                               id="buscarSocio"
+                               class="form-control premium-input"
+                               placeholder="Ej: Juan Pérez o 38241001"
+                               autocomplete="off">
+                        <div id="resultadosBusqueda" class="cobro-resultados-dropdown"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Alta rápida (cuando el buscador no encontró a nadie) -->
+        <section class="form-section" th:if="${mostrarAltaRapida}">
+            <div class="premium-form-card">
+                <div class="premium-form-header">
+                    <h3>Crear socio nuevo</h3>
+                    <span>Se asigna el plan y se genera la primera cuota automáticamente</span>
+                </div>
+
+                <form th:action="@{/cobrar/nuevo-socio}" method="post" class="premium-form-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">Nombre</label>
+                            <input type="text" name="nombre" class="form-control premium-input" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">Apellido</label>
+                            <input type="text" name="apellido" class="form-control premium-input" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">DNI</label>
+                            <input type="text" name="dni" class="form-control premium-input"
+                                   th:value="${dniSugerido}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">Teléfono</label>
+                            <input type="text" name="telefono" class="form-control premium-input">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">Plan</label>
+                            <select name="planId" class="form-select premium-input premium-select" required>
+                                <option value="">Seleccione un plan</option>
+                                <option th:each="p : ${planes}" th:value="${p.id}" th:text="${p.getDescripcion()}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">Fecha de inicio del plan</label>
+                            <input type="date" name="fechaInicioPlan" class="form-control premium-input">
+                            <small class="premium-help-text">Si la dejás vacía, se usa la fecha de hoy.</small>
+                        </div>
+                    </div>
+
+                    <div class="premium-form-actions">
+                        <button type="submit" class="btn btn-gold-action">Crear y continuar al cobro</button>
+                        <a th:href="@{/cobrar}" class="btn btn-outline-gold-soft">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Panel del socio seleccionado -->
+        <section class="form-section" th:if="${socio != null}">
+            <div class="premium-form-card cobro-socio-card">
+                <div class="premium-form-header">
+                    <h3 th:text="${socio.apellido + ', ' + socio.nombre}">Pérez, Juan</h3>
+                    <span>DNI <span th:text="${socio.dni}">12345678</span></span>
+                </div>
+
+                <div class="premium-form-body">
+
+                    <div class="cobro-info-grid">
+                        <div class="cobro-info-item">
+                            <span class="metric-label">Plan</span>
+                            <strong th:text="${socio.plan != null ? socio.plan.nombre : 'Sin plan asignado'}">-</strong>
+                        </div>
+                        <div class="cobro-info-item">
+                            <span class="metric-label">Estado</span>
+                            <span th:switch="${socio.estado != null ? socio.estado.name() : ''}">
+                                <span th:case="'ACTIVO'" class="status-badge status-badge-success">Activo</span>
+                                <span th:case="'MOROSO'" class="status-badge status-badge-warning">Moroso</span>
+                                <span th:case="'INACTIVO'" class="status-badge status-badge-danger">Inactivo</span>
+                                <span th:case="*" class="status-badge">-</span>
+                            </span>
+                        </div>
+                        <div class="cobro-info-item">
+                            <span class="metric-label">Próximo vencimiento</span>
+                            <strong th:text="${socio.fechaVencimientoPlan != null ? socio.fechaVencimientoPlan : '-'}">-</strong>
+                        </div>
+                    </div>
+
+                    <!-- Caso 1: el socio no tiene plan asignado -->
+                    <div th:if="${socio.plan == null}" class="cobro-subseccion">
+                        <h4>Este socio no tiene un plan activo</h4>
+                        <form th:action="@{/cobrar/asignar-plan}" method="post" class="row g-3 align-items-end">
+                            <input type="hidden" name="socioId" th:value="${socio.id}">
+                            <div class="col-md-5">
+                                <label class="form-label premium-label">Plan</label>
+                                <select name="planId" class="form-select premium-input premium-select" required>
+                                    <option value="">Seleccione un plan</option>
+                                    <option th:each="p : ${planes}" th:value="${p.id}" th:text="${p.getDescripcion()}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label premium-label">Fecha de inicio</label>
+                                <input type="date" name="fechaInicioPlan" class="form-control premium-input">
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-gold-action w-100">Asignar y generar cuota</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Caso 2: tiene plan y una cuota pendiente -->
+                    <div th:if="${socio.plan != null and cuotaPendiente != null}" class="cobro-subseccion">
+                        <h4>Cuota pendiente</h4>
+                        <div class="cobro-cuota-resumen">
+                            <div>
+                                <span class="metric-label">Vencimiento</span>
+                                <strong th:text="${cuotaPendiente.fechaVencimiento}">-</strong>
+                            </div>
+                            <div>
+                                <span class="metric-label">Monto</span>
+                                <strong th:text="${'$ ' + cuotaPendiente.monto}">$ 0</strong>
+                            </div>
+                        </div>
+
+                        <form th:action="@{/cobrar/pagar}" method="post" class="row g-3 align-items-end mt-2">
+                            <input type="hidden" name="cuotaId" th:value="${cuotaPendiente.id}">
+                            <input type="hidden" name="socioId" th:value="${socio.id}">
+                            <div class="col-md-4">
+                                <label class="form-label premium-label">Monto a cobrar</label>
+                                <input type="number" step="0.01" min="0" name="monto" class="form-control premium-input"
+                                       th:value="${cuotaPendiente.monto}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label premium-label">Medio de pago</label>
+                                <select name="medioPago" class="form-select premium-input premium-select" required>
+                                    <option value="">Seleccione un medio de pago</option>
+                                    <option value="Efectivo">Efectivo</option>
+                                    <option value="Transferencia">Transferencia</option>
+                                    <option value="Tarjeta">Tarjeta</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-gold-action w-100">Cobrar</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Caso 3: tiene plan y está al día -->
+                    <div th:if="${socio.plan != null and cuotaPendiente == null}" class="cobro-subseccion">
+                        <div class="premium-alert-success">
+                            Este socio está al día. No tiene cuotas pendientes.
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<script th:inline="javascript">
+    const buscarInput = document.getElementById('buscarSocio');
+    const resultados = document.getElementById('resultadosBusqueda');
+    let timeoutId;
+
+    buscarInput.addEventListener('input', function () {
+        clearTimeout(timeoutId);
+        const texto = this.value.trim();
+
+        if (texto.length < 2) {
+            resultados.innerHTML = '';
+            resultados.classList.remove('show');
+            return;
+        }
+
+        timeoutId = setTimeout(() => buscar(texto), 300);
+    });
+
+    function buscar(texto) {
+        fetch('/cobrar/buscar?q=' + encodeURIComponent(texto))
+            .then(res => res.json())
+            .then(data => mostrarResultados(data, texto))
+            .catch(() => {
+                resultados.innerHTML = '';
+                resultados.classList.remove('show');
+            });
+    }
+
+    function mostrarResultados(data, texto) {
+        resultados.innerHTML = '';
+        resultados.classList.add('show');
+
+        if (data.length === 0) {
+            const vacio = document.createElement('div');
+            vacio.className = 'cobro-resultado-vacio';
+            vacio.innerHTML = 'No se encontraron socios. ' +
+                '<a href="/cobrar?altaRapida=true&q=' + encodeURIComponent(texto) + '">+ Crear socio nuevo</a>';
+            resultados.appendChild(vacio);
+            return;
+        }
+
+        data.forEach(s => {
+            const item = document.createElement('a');
+            item.href = '/cobrar?socioId=' + s.id;
+            item.className = 'cobro-resultado-item';
+
+            const claseBadge = s.estado === 'ACTIVO' ? 'status-badge-success'
+                : s.estado === 'MOROSO' ? 'status-badge-warning'
+                : s.estado === 'INACTIVO' ? 'status-badge-danger' : '';
+
+            item.innerHTML =
+                '<span class="cobro-resultado-nombre">' + s.nombreCompleto + '</span>' +
+                '<span class="cobro-resultado-dni">DNI ' + s.dni + '</span>' +
+                '<span class="status-badge ' + claseBadge + '">' + s.estado + '</span>';
+
+            resultados.appendChild(item);
+        });
+    }
+
+    document.addEventListener('click', function (e) {
+        if (!resultados.contains(e.target) && e.target !== buscarInput) {
+            resultados.classList.remove('show');
+        }
+    });
+</script>
+
+</body>
+</html>

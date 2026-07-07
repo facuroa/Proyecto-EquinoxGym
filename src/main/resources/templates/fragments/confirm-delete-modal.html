@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="confirmDeleteModal" class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content premium-modal-content">
+      <div class="modal-header premium-modal-header">
+        <h5 class="modal-title">Confirmar eliminación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body premium-modal-body">
+        <p id="confirmDeleteMessage">¿Seguro que querés eliminar este registro? Esta acción no se puede deshacer.</p>
+      </div>
+      <div class="modal-footer premium-modal-footer">
+        <button type="button" class="btn btn-outline-gold-soft" data-bs-dismiss="modal">Cancelar</button>
+        <a id="confirmDeleteButton" href="#" class="btn btn-delete-premium">Sí, eliminar</a>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

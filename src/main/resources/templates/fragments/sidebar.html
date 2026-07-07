@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<aside th:fragment="sidebar(activeLink)" class="sidebar">
+    <div>
+        <a th:href="@{/dashboard}" class="brand-box">
+            <img th:src="@{/img/icono.png}" alt="Logo Equinox" class="brand-logo">
+            <div class="brand-texts">
+                <span class="brand-title">EQUINOX</span>
+                <span class="brand-subtitle">GYM SYSTEM</span>
+            </div>
+        </a>
+
+        <div class="sidebar-user">
+            <span class="sidebar-user-label">Conectado como</span>
+            <strong sec:authentication="name">usuario</strong><br>
+            <span sec:authorize="hasRole('ADMIN')" class="sidebar-role-badge role-admin">Administrador</span>
+            <span sec:authorize="hasRole('RECEPCIONISTA')" class="sidebar-role-badge role-recep">Recepcionista</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a th:href="@{/cobrar}"
+               th:classappend="${activeLink == 'cobrar'} ? ' active'"
+               class="sidebar-link">Cobrar</a>
+
+            <a th:href="@{/dashboard}"
+               th:classappend="${activeLink == 'dashboard'} ? ' active'"
+               class="sidebar-link">Inicio</a>
+
+            <a th:href="@{/socios}"
+               th:classappend="${activeLink == 'socios'} ? ' active'"
+               class="sidebar-link">Socios</a>
+
+            <a th:href="@{/cuotas}"
+               th:classappend="${activeLink == 'cuotas'} ? ' active'"
+               class="sidebar-link">Cuotas</a>
+
+            <a th:href="@{/pagos}"
+               th:classappend="${activeLink == 'pagos'} ? ' active'"
+               class="sidebar-link">Pagos</a>
+
+            <a sec:authorize="hasRole('ADMIN')"
+               th:href="@{/planes}"
+               th:classappend="${activeLink == 'planes'} ? ' active'"
+               class="sidebar-link">Planes</a>
+
+            <a sec:authorize="hasRole('ADMIN')"
+               th:href="@{/usuarios}"
+               th:classappend="${activeLink == 'usuarios'} ? ' active'"
+               class="sidebar-link">Usuarios</a>
+        </nav>
+    </div>
+
+    <form th:action="@{/logout}" method="post">
+        <button type="submit" class="btn btn-logout w-100">Cerrar sesión</button>
+    </form>
+</aside>
+</body>
+</html>

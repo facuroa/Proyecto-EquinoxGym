@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuario - Equinox Gym</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body class="dashboard-body">
+<div class="dashboard-wrapper">
+
+    <aside th:replace="~{fragments/sidebar :: sidebar('usuarios')}"></aside>
+
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <p class="topbar-label">Configuración</p>
+                <h1 class="topbar-title" th:text="${usuario.id != null ? 'Editar Usuario' : 'Nuevo Usuario'}">Nuevo Usuario</h1>
+                <p class="topbar-subtitle">Definí las credenciales y el rol del usuario.</p>
+            </div>
+            <div class="topbar-status">
+                <span>Acción</span>
+                <strong th:text="${usuario.id != null ? 'Edición' : 'Alta'}">Alta</strong>
+            </div>
+        </header>
+
+        <section class="form-section">
+            <div class="premium-form-card">
+                <div class="premium-form-header">
+                    <h3 th:text="${usuario.id != null ? 'Editar usuario' : 'Registrar nuevo usuario'}">Registrar usuario</h3>
+                    <span th:if="${usuario.id != null}">Dejá la contraseña en blanco para no modificarla</span>
+                    <span th:unless="${usuario.id != null}">Completá todos los campos</span>
+                </div>
+
+                <div th:if="${error}" class="premium-alert-danger" th:text="${error}"></div>
+
+                <form th:action="@{/usuarios/guardar}" th:object="${usuario}" method="post" class="premium-form-body">
+                    <input type="hidden" th:field="*{id}">
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">Nombre de usuario</label>
+                            <input type="text" class="form-control premium-input" th:field="*{username}"
+                                   placeholder="Ej: recepcion1" autocomplete="off">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">Contraseña</label>
+                            <input type="password" class="form-control premium-input" name="passwordNuevo"
+                                   placeholder="••••••••" autocomplete="new-password">
+                            <small class="premium-help-text" th:if="${usuario.id != null}">Dejar vacío para no cambiarla.</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label premium-label">Rol</label>
+                            <select class="form-select premium-input premium-select" th:field="*{rol}">
+                                <option value="">Seleccione un rol</option>
+                                <option th:each="r : ${roles}"
+                                        th:value="${r.name()}"
+                                        th:text="${r.name() == 'ADMIN' ? 'Administrador' : 'Recepcionista'}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6" th:if="${usuario.id != null}">
+                            <label class="form-label premium-label">Estado</label>
+                            <select class="form-select premium-input premium-select" th:field="*{activo}">
+                                <option value="true">Activo</option>
+                                <option value="false">Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="premium-form-actions">
+                        <button type="submit" class="btn btn-gold-action"
+                                th:text="${usuario.id != null ? 'Guardar cambios' : 'Crear usuario'}">
+                            Crear usuario
+                        </button>
+                        <a th:href="@{/usuarios}" class="btn btn-outline-gold-soft">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+    </main>
+</div>
+</body>
+</html>

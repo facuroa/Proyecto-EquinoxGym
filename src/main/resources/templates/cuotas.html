@@ -4,41 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuotas - Equinox Gym</title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/estilos.css}">
 </head>
 <body class="dashboard-body">
-
 <div class="dashboard-wrapper">
 
-    <aside class="sidebar">
-        <div>
-            <a th:href="@{/dashboard}" class="brand-box">
-                <img th:src="@{/img/icono.png}" alt="Logo Equinox" class="brand-logo">
-                <div class="brand-texts">
-                    <span class="brand-title">EQUINOX</span>
-                    <span class="brand-subtitle">GYM SYSTEM</span>
-                </div>
-            </a>
-
-            <div class="sidebar-user">
-                <span class="sidebar-user-label">Módulo actual</span>
-                <strong>Gestión de Cuotas</strong>
-            </div>
-
-            <nav class="sidebar-nav">
-                <a th:href="@{/dashboard}" class="sidebar-link">Inicio</a>
-                <a th:href="@{/socios}" class="sidebar-link">Socios</a>
-                <a th:href="@{/cuotas}" class="sidebar-link active">Cuotas</a>
-                <a th:href="@{/pagos}" class="sidebar-link">Pagos</a>
-            </nav>
-        </div>
-
-        <form th:action="@{/logout}" method="post">
-            <button type="submit" class="btn btn-logout w-100">Cerrar sesión</button>
-        </form>
-    </aside>
+    <aside th:replace="~{fragments/sidebar :: sidebar('cuotas')}"></aside>
 
     <main class="main-content">
 
@@ -46,11 +18,8 @@
             <div>
                 <p class="topbar-label">Administración de cuotas</p>
                 <h1 class="topbar-title">Gestión de Cuotas</h1>
-                <p class="topbar-subtitle">
-                    Controlá vencimientos, estados y administración de cuotas mensuales.
-                </p>
+                <p class="topbar-subtitle">Controlá vencimientos, estados y administración de cuotas mensuales.</p>
             </div>
-
             <div class="topbar-status">
                 <span>Cuotas visibles</span>
                 <strong th:text="${#lists.size(cuotas)}">0</strong>
@@ -60,7 +29,7 @@
         <section class="cuotas-toolbar-section">
             <div class="socios-toolbar-card">
                 <div class="row g-3 align-items-end">
-                    <div class="col-lg-8">
+                    <div class="col-lg-12">
                         <form th:action="@{/cuotas}" method="get" class="w-100">
                             <label for="estado" class="form-label premium-label">Filtrar por estado</label>
                             <div class="input-group premium-search-group">
@@ -74,14 +43,7 @@
                             </div>
                         </form>
                     </div>
-
-                    <div class="col-lg-4">
-                        <div class="d-grid">
-                            <a th:href="@{/cuotas/nueva}" class="btn btn-gold-action">+ Nueva cuota</a>
-                        </div>
-                    </div>
                 </div>
-
                 <div class="socios-toolbar-actions">
                     <a th:href="@{/cuotas}" class="btn btn-outline-gold-soft btn-sm">Mostrar todas</a>
                 </div>
@@ -90,27 +52,19 @@
 
         <section class="cuotas-stats-section">
             <div class="row g-4">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="metric-card">
                         <span class="metric-label">Cuotas visibles</span>
                         <div class="metric-value" th:text="${#lists.size(cuotas)}">0</div>
                     </div>
                 </div>
-
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="metric-card metric-card-highlight">
                         <span class="metric-label">Filtro aplicado</span>
                         <div class="metric-value metric-value-text"
                              th:text="${estadoSeleccionado != null ? estadoSeleccionado : 'TODAS'}">
                             TODAS
                         </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="metric-card">
-                        <span class="metric-label">Acción rápida</span>
-                        <div class="metric-value metric-value-small">Alta de cuotas</div>
                     </div>
                 </div>
             </div>
@@ -124,7 +78,6 @@
                         <span>Control de vencimientos y pagos</span>
                     </div>
                 </div>
-
                 <div class="table-responsive">
                     <table class="table premium-table align-middle mb-0">
                         <thead>
@@ -140,45 +93,29 @@
                         </thead>
                         <tbody>
                             <tr th:if="${#lists.isEmpty(cuotas)}">
-                                <td colspan="7" class="text-center py-5 empty-state-cell">
-                                    No se encontraron cuotas.
-                                </td>
+                                <td colspan="7" class="text-center py-5 empty-state-cell">No se encontraron cuotas.</td>
                             </tr>
-
                             <tr th:each="cuota, iterStat : ${cuotas}">
                                 <td th:text="${iterStat.count}">1</td>
                                 <td th:text="${cuota.socio != null ? cuota.socio.nombreCompleto : 'Sin socio'}">Socio</td>
                                 <td th:text="${cuota.fechaVencimiento}">2026-03-26</td>
                                 <td th:text="${cuota.fechaPago != null ? cuota.fechaPago : '-'}">-</td>
                                 <td th:text="${'$ ' + cuota.monto}">$ 0</td>
-
                                 <td>
                                     <span th:if="${cuota.estado == T(com.equinox.EquinoxGym.EstadoCuota).PENDIENTE}"
-                                          class="status-badge status-badge-warning">
-                                        Pendiente
-                                    </span>
-
+                                          class="status-badge status-badge-warning">Pendiente</span>
                                     <span th:if="${cuota.estado == T(com.equinox.EquinoxGym.EstadoCuota).PAGADA}"
-                                          class="status-badge status-badge-success">
-                                        Pagada
-                                    </span>
-
+                                          class="status-badge status-badge-success">Pagada</span>
                                     <span th:if="${cuota.estado == T(com.equinox.EquinoxGym.EstadoCuota).VENCIDA}"
-                                          class="status-badge status-badge-danger">
-                                        Vencida
-                                    </span>
+                                          class="status-badge status-badge-danger">Vencida</span>
                                 </td>
-
                                 <td class="text-center">
                                     <div class="action-buttons-premium">
-                                        <a th:href="@{'/cuotas/editar/' + ${cuota.id}}" class="btn btn-edit-premium btn-sm">
-                                            Editar
-                                        </a>
+                                        <a th:href="@{'/cuotas/editar/' + ${cuota.id}}" class="btn btn-edit-premium btn-sm">Editar</a>
                                         <a th:href="@{'/cuotas/eliminar/' + ${cuota.id}}"
                                            class="btn btn-delete-premium btn-sm"
-                                           onclick="return confirm('¿Seguro que querés eliminar esta cuota?')">
-                                            Eliminar
-                                        </a>
+                                           data-confirm-delete
+                                           data-mensaje="¿Seguro que querés eliminar esta cuota? Esta acción no se puede deshacer.">Eliminar</a>
                                     </div>
                                 </td>
                             </tr>
@@ -190,7 +127,8 @@
 
     </main>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<div th:replace="~{fragments/confirm-delete-modal :: confirmDeleteModal}"></div>
+<script th:src="@{/js/confirm-delete.js}"></script>
 </body>
 </html>

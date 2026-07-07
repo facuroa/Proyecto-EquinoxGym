@@ -4,41 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Equinox Gym</title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/estilos.css}">
 </head>
 <body class="dashboard-body">
-
 <div class="dashboard-wrapper">
 
-    <aside class="sidebar">
-        <div>
-            <a th:href="@{/dashboard}" class="brand-box">
-                <img th:src="@{/img/icono.png}" alt="Logo Equinox" class="brand-logo">
-                <div class="brand-texts">
-                    <span class="brand-title">EQUINOX</span>
-                    <span class="brand-subtitle">GYM SYSTEM</span>
-                </div>
-            </a>
-
-            <div class="sidebar-user">
-                <span class="sidebar-user-label">Usuario conectado</span>
-                <strong th:text="${usuarioLogueado}">admin</strong>
-            </div>
-
-            <nav class="sidebar-nav">
-                <a th:href="@{/dashboard}" class="sidebar-link active">Inicio</a>
-                <a th:href="@{/socios}" class="sidebar-link">Socios</a>
-                <a th:href="@{/cuotas}" class="sidebar-link">Cuotas</a>
-                <a th:href="@{/pagos}" class="sidebar-link">Pagos</a>
-            </nav>
-        </div>
-
-        <form th:action="@{/logout}" method="post">
-            <button type="submit" class="btn btn-logout w-100">Cerrar sesión</button>
-        </form>
-    </aside>
+    <aside th:replace="~{fragments/sidebar :: sidebar('dashboard')}"></aside>
 
     <main class="main-content">
 
@@ -46,11 +18,8 @@
             <div>
                 <p class="topbar-label">Sistema de gestión</p>
                 <h1 class="topbar-title">Panel principal</h1>
-                <p class="topbar-subtitle">
-                    Bienvenido, <strong th:text="${usuarioLogueado}">admin</strong>
-                </p>
+                <p class="topbar-subtitle">Bienvenido, <strong th:text="${usuarioLogueado}">admin</strong></p>
             </div>
-
             <div class="topbar-status">
                 <span>Estado general</span>
                 <strong>EQUINOX GYM</strong>
@@ -63,17 +32,13 @@
                     <div class="hero-card">
                         <span class="hero-badge">Premium Fitness</span>
                         <h2>Bienvenido al sistema de gestion del gimnasio Equinox</h2>
-                        <p>
-                            Administrár socios, cuotas y pagos.
-                        </p>
-
+                        <p>Administrár socios, cuotas y pagos.</p>
                         <div class="hero-actions">
                             <a th:href="@{/socios}" class="btn btn-gold">Ver socios</a>
                             <a th:href="@{/pagos}" class="btn btn-outline-gold">Ver pagos</a>
                         </div>
                     </div>
                 </div>
-
                 <div class="col-lg-5">
                     <div class="hero-image-box">
                         <img th:src="@{/img/logo-equinox.png}" alt="Equinox Gym" class="hero-image">
@@ -90,42 +55,36 @@
                         <div class="metric-value" th:text="${resumen.totalSocios}">0</div>
                     </div>
                 </div>
-
                 <div class="col-sm-6 col-xl-3">
                     <div class="metric-card">
                         <span class="metric-label">Socios activos</span>
                         <div class="metric-value" th:text="${resumen.sociosActivos}">0</div>
                     </div>
                 </div>
-
                 <div class="col-sm-6 col-xl-3">
                     <div class="metric-card">
                         <span class="metric-label">Socios morosos</span>
                         <div class="metric-value" th:text="${resumen.sociosMorosos}">0</div>
                     </div>
                 </div>
-
                 <div class="col-sm-6 col-xl-3">
                     <div class="metric-card">
                         <span class="metric-label">Socios inactivos</span>
                         <div class="metric-value" th:text="${resumen.sociosInactivos}">0</div>
                     </div>
                 </div>
-
                 <div class="col-md-4">
                     <div class="metric-card metric-card-highlight">
                         <span class="metric-label">Recaudado del mes</span>
                         <div class="metric-value" th:text="'$ ' + ${resumen.recaudadoMes}">$ 0</div>
                     </div>
                 </div>
-
                 <div class="col-md-4">
                     <div class="metric-card">
                         <span class="metric-label">Cuotas pagadas del mes</span>
                         <div class="metric-value" th:text="${resumen.cuotasPagadasMes}">0</div>
                     </div>
                 </div>
-
                 <div class="col-md-4">
                     <div class="metric-card">
                         <span class="metric-label">Cuotas vencidas</span>
@@ -147,7 +106,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="col-md-4">
                     <div class="module-card">
                         <div class="module-accent"></div>
@@ -158,7 +116,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="col-md-4">
                     <div class="module-card">
                         <div class="module-accent"></div>
@@ -174,7 +131,6 @@
 
     </main>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

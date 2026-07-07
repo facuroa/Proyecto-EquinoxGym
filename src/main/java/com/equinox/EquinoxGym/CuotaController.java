@@ -14,15 +14,18 @@ public class CuotaController {
 
     private final CuotaRepository cuotaRepository;
     private final SocioRepository socioRepository;
+    private final PagoRepository pagoRepository;
     private final CuotaService cuotaService;
     private final SocioService socioService;
 
     public CuotaController(CuotaRepository cuotaRepository,
                            SocioRepository socioRepository,
+                           PagoRepository pagoRepository,
                            CuotaService cuotaService,
                            SocioService socioService) {
         this.cuotaRepository = cuotaRepository;
         this.socioRepository = socioRepository;
+        this.pagoRepository = pagoRepository;
         this.cuotaService = cuotaService;
         this.socioService = socioService;
     }
@@ -173,6 +176,8 @@ public class CuotaController {
                 .orElseThrow(() -> new RuntimeException("Cuota no encontrada"));
 
         Socio socio = cuota.getSocio();
+
+        pagoRepository.deleteByCuota_Id(id);
         cuotaRepository.delete(cuota);
 
         if (socio != null) {
