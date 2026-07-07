@@ -14,20 +14,17 @@ public class SocioController {
 
     private final SocioRepository socioRepository;
     private final PlanRepository planRepository;
-    private final CuotaRepository cuotaRepository;
     private final PagoRepository pagoRepository;
     private final SocioService socioService;
     private final CobroService cobroService;
 
     public SocioController(SocioRepository socioRepository,
                            PlanRepository planRepository,
-                           CuotaRepository cuotaRepository,
                            PagoRepository pagoRepository,
                            SocioService socioService,
                            CobroService cobroService) {
         this.socioRepository = socioRepository;
         this.planRepository = planRepository;
-        this.cuotaRepository = cuotaRepository;
         this.pagoRepository = pagoRepository;
         this.socioService = socioService;
         this.cobroService = cobroService;
@@ -71,19 +68,19 @@ public class SocioController {
     }
 
     @PostMapping("/socios/guardar")
-    public String guardarSocio(@ModelAttribute("socio") Socio socio,
+    public String guardarSocio(@ModelAttribute("socio") Socio socioForm,
                                @RequestParam(value = "planId", required = false) Long planId,
                                @RequestParam(value = "fechaInicioPlan", required = false) String fechaInicioPlanStr,
                                BindingResult result,
                                Model model) {
 
-        boolean esNuevo = (socio.getId() == null);
+        boolean esNuevo = (socioForm.getId() == null);
         Plan planSeleccionado = null;
 
-        if (socio.getDni() == null || socio.getDni().trim().isEmpty()) {
+        if (socioForm.getDni() == null || socioForm.getDni().trim().isEmpty()) {
             result.rejectValue("dni", "error.socio", "El DNI es obligatorio");
         }
-        if (dniDuplicado(socio)) {
+        if (dniDuplicado(socioForm)) {
             result.rejectValue("dni", "error.socio", "Ya existe un socio con ese DNI");
         }
 
@@ -96,47 +93,53 @@ public class SocioController {
             return "nuevo-socio";
         }
 
-        Socio socioBase = null;
+        Socio socioPersistente;
         boolean teniaPlan = false;
         boolean teniaCuotas = false;
 
-        if (!esNuevo) {
-            socioBase = socioRepository.findById(socio.getId()).orElse(null);
-            if (socioBase != null) {
-                teniaPlan = socioBase.getPlan() != null;
-                teniaCuotas = socioBase.getCuotas() != null && !socioBase.getCuotas().isEmpty();
+        if (esNuevo) {
+            socioPersistente = new Socio();
+        } else {
+            socioPersistente = socioRepository.findById(socioForm.getId()).orElse(null);
+            if (socioPersistente == null) {
+                return "redirect:/socios";
             }
+            teniaPlan = socioPersistente.getPlan() != null;
+            teniaCuotas = socioPersistente.getCuotas() != null && !socioPersistente.getCuotas().isEmpty();
+        }
+
+        socioPersistente.setNombre(socioForm.getNombre());
+        socioPersistente.setApellido(socioForm.getApellido());
+        socioPersistente.setDni(socioForm.getDni());
+        socioPersistente.setTelefono(socioForm.getTelefono());
+        socioPersistente.setEmail(socioForm.getEmail());
+        socioPersistente.setFechaNacimiento(socioForm.getFechaNacimiento());
+        socioPersistente.setObservaciones(socioForm.getObservaciones());
+
+        if (socioPersistente.getEstado() == null) {
+            socioPersistente.setEstado(EstadoSocio.ACTIVO);
         }
 
         LocalDate inicio = (fechaInicioPlanStr != null && !fechaInicioPlanStr.isEmpty())
                 ? LocalDate.parse(fechaInicioPlanStr)
                 : LocalDate.now();
 
+        Socio socioGuardado = socioRepository.save(socioPersistente);
+
         if (planSeleccionado != null) {
-            socio.setPlan(planSeleccionado);
-            socio.setFechaInicioPlan(inicio);
-            socio.setFechaVencimientoPlan(inicio.plusMonths(planSeleccionado.getDuracionMeses()));
-        } else {
-            socio.setPlan(null);
-            socio.setFechaInicioPlan(null);
-            socio.setFechaVencimientoPlan(null);
-        }
-
-        if (socio.getEstado() == null) {
-            socio.setEstado(EstadoSocio.ACTIVO);
-        }
-
-        Socio socioGuardado = socioRepository.save(socio);
-
-        if (planSeleccionado != null && (esNuevo || !teniaPlan || !teniaCuotas)) {
-            boolean tieneCuotaConEseVencimiento = socioGuardado.getCuotas() != null
-                    && socioGuardado.getCuotas().stream()
-                    .anyMatch(c -> c.getFechaVencimiento() != null
-                            && c.getFechaVencimiento().equals(socioGuardado.getFechaVencimientoPlan()));
-
-            if (!tieneCuotaConEseVencimiento) {
+            if (esNuevo || !teniaPlan || !teniaCuotas) {
                 cobroService.asignarPlanAExistente(socioGuardado, planSeleccionado, inicio);
+            } else {
+                socioGuardado.setPlan(planSeleccionado);
+                socioGuardado.setFechaInicioPlan(inicio);
+                socioGuardado.setFechaVencimientoPlan(inicio.plusMonths(planSeleccionado.getDuracionMeses()));
+                socioRepository.save(socioGuardado);
             }
+        } else {
+            socioGuardado.setPlan(null);
+            socioGuardado.setFechaInicioPlan(null);
+            socioGuardado.setFechaVencimientoPlan(null);
+            socioRepository.save(socioGuardado);
         }
 
         return "redirect:/socios";
