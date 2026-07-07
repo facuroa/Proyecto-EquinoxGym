@@ -11,9 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 public interface PagoRepository extends JpaRepository<Pago, Long> {
 
-    @Query("SELECT SUM(p.monto) FROM Pago p WHERE p.fechaPago BETWEEN :inicio AND :fin")
+    @Query("SELECT COALESCE(SUM(p.monto), 0) FROM Pago p WHERE p.fechaPago BETWEEN :inicio AND :fin")
     BigDecimal obtenerTotalRecaudadoDelMes(@Param("inicio") LocalDate inicio,
                                            @Param("fin") LocalDate fin);
+
+    long countByFechaPagoBetween(LocalDate inicio, LocalDate fin);
 
     List<Pago> findByMedioPago(String medioPago);
 
