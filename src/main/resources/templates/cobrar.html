@@ -18,7 +18,7 @@
             <div>
                 <p class="topbar-label">Mostrador</p>
                 <h1 class="topbar-title">Cobrar</h1>
-                <p class="topbar-subtitle">Buscá un socio o creá uno nuevo para registrar el cobro en un solo paso.</p>
+                <p class="topbar-subtitle">Buscá un socio, cobrá cuotas pendientes o completá altas sin cuota inicial.</p>
             </div>
             <div class="topbar-status">
                 <span>Acción rápida</span>
@@ -29,6 +29,9 @@
         <!-- Mensajes de éxito / error -->
         <div th:if="${mensaje == 'pagado'}" class="premium-alert-success mb-4">
             Pago registrado correctamente. Si el socio tiene un plan activo, ya se generó la próxima cuota.
+        </div>
+        <div th:if="${mensaje == 'cuotaGenerada'}" class="premium-alert-success mb-4">
+            La cuota inicial fue generada correctamente. Ahora podés cobrarla desde esta misma pantalla.
         </div>
         <div th:if="${error == 'dniDuplicado'}" class="premium-alert-danger mb-4">
             Ya existe un socio con ese DNI. Buscalo arriba en vez de crear uno nuevo.
@@ -41,6 +44,12 @@
         </div>
         <div th:if="${error == 'pagoInvalido'}" class="premium-alert-danger mb-4">
             No se pudo registrar el pago. Revisá que el monto sea mayor a cero y que el medio de pago esté seleccionado.
+        </div>
+        <div th:if="${error == 'socioSinPlan'}" class="premium-alert-danger mb-4">
+            El socio no tiene un plan asignado. Primero asignale un plan.
+        </div>
+        <div th:if="${error == 'cuotaExistente'}" class="premium-alert-danger mb-4">
+            Este socio ya tiene cuotas registradas. Usá la cuota pendiente para cobrar.
         </div>
 
         <!-- Buscador -->
@@ -68,7 +77,7 @@
             <div class="premium-form-card">
                 <div class="premium-form-header">
                     <h3>Crear socio nuevo</h3>
-                    <span>Se asigna el plan y se genera la primera cuota automáticamente</span>
+                    <span>Asigná el plan y, si corresponde, registrá el cobro inicial</span>
                 </div>
 
                 <form th:action="@{/cobrar/nuevo-socio}" method="post" class="premium-form-body">
@@ -111,10 +120,37 @@
                             <input type="date" name="fechaInicioPlan" class="form-control premium-input">
                             <small class="premium-help-text">Si la dejás vacía, se usa la fecha de hoy.</small>
                         </div>
+
+                        <div class="col-12">
+                            <div class="premium-form-card p-3">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <input class="form-check-input" type="checkbox" id="cobrarAltaRapida" name="cobrarAlta" value="true">
+                                    <label for="cobrarAltaRapida" class="form-label premium-label mb-0">Registrar cobro inicial ahora</label>
+                                </div>
+                                <small class="premium-help-text d-block mb-3">
+                                    Si el socio paga al darse de alta, marcá esta opción. La primera cuota quedará pagada y se generará la próxima renovación.
+                                </small>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label premium-label">Monto cobrado</label>
+                                        <input type="number" step="0.01" min="0.01" name="montoInicial" class="form-control premium-input" placeholder="Si queda vacío, se usa el precio del plan">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label premium-label">Medio de pago</label>
+                                        <select name="medioPagoInicial" class="form-select premium-input premium-select">
+                                            <option value="">Seleccione un medio de pago</option>
+                                            <option value="Efectivo">Efectivo</option>
+                                            <option value="Transferencia">Transferencia</option>
+                                            <option value="Tarjeta">Tarjeta</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="premium-form-actions">
-                        <button type="submit" class="btn btn-gold-action">Crear y continuar al cobro</button>
+                        <button type="submit" class="btn btn-gold-action">Crear socio</button>
                         <a th:href="@{/cobrar}" class="btn btn-outline-gold-soft">Cancelar</a>
                     </div>
                 </form>
@@ -178,7 +214,45 @@
                         </form>
                     </div>
 
-                    <!-- Caso 2: tiene una cuota pendiente, incluso si está vencida -->
+                    <!-- Caso 2: tiene plan pero no tiene ninguna cuota generada -->
+                    <div th:if="${socio.plan != null and cuotaPendiente == null and !socio.tieneCuotas()}" class="cobro-subseccion">
+                        <h4>Este socio tiene plan, pero todavía no tiene cuota inicial</h4>
+                        <div class="premium-alert-danger mb-3">
+                            El alta quedó incompleta: hay plan asignado, pero no existe cuota para cobrar o renovar.
+                        </div>
+                        <form th:action="@{/cobrar/generar-cuota-inicial}" method="post" class="row g-3 align-items-end">
+                            <input type="hidden" name="socioId" th:value="${socio.id}">
+                            <div class="col-md-4">
+                                <label class="form-label premium-label">Fecha de inicio</label>
+                                <input type="date" name="fechaInicioPlan" class="form-control premium-input">
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center gap-2">
+                                    <input class="form-check-input" type="checkbox" id="cobrarCuotaInicial" name="cobrarAlta" value="true">
+                                    <label for="cobrarCuotaInicial" class="form-label premium-label mb-0">Cobrar ahora</label>
+                                </div>
+                                <small class="premium-help-text">Si no marcás esta opción, solo se genera la cuota pendiente.</small>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label premium-label">Monto</label>
+                                <input type="number" step="0.01" min="0.01" name="montoInicial" class="form-control premium-input" th:placeholder="${socio.plan != null ? socio.plan.precio : ''}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label premium-label">Medio</label>
+                                <select name="medioPagoInicial" class="form-select premium-input premium-select">
+                                    <option value="">Seleccione</option>
+                                    <option value="Efectivo">Efectivo</option>
+                                    <option value="Transferencia">Transferencia</option>
+                                    <option value="Tarjeta">Tarjeta</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-gold-action">Generar cuota inicial</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Caso 3: tiene una cuota pendiente, incluso si está vencida -->
                     <div th:if="${cuotaPendiente != null}" class="cobro-subseccion">
                         <h4>Cuota pendiente</h4>
                         <div class="cobro-cuota-resumen">
@@ -216,8 +290,8 @@
                         </form>
                     </div>
 
-                    <!-- Caso 3: tiene plan y está al día -->
-                    <div th:if="${socio.plan != null and cuotaPendiente == null}" class="cobro-subseccion">
+                    <!-- Caso 4: tiene plan, tiene historial y está al día -->
+                    <div th:if="${socio.plan != null and cuotaPendiente == null and socio.tieneCuotas()}" class="cobro-subseccion">
                         <div class="premium-alert-success">
                             Este socio está al día. No tiene cuotas pendientes.
                         </div>
