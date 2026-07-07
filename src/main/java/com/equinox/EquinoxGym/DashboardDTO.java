@@ -1,6 +1,8 @@
 package com.equinox.EquinoxGym;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DashboardDTO {
 
@@ -11,6 +13,7 @@ public class DashboardDTO {
     private long cuotasVencidas;
     private long cuotasPagadasMes;
     private BigDecimal recaudadoMes;
+    private List<Socio> cumpleaniosHoy = new ArrayList<>();
 
     public long getTotalSocios() {
         return totalSocios;
@@ -66,5 +69,13 @@ public class DashboardDTO {
 
     public void setRecaudadoMes(BigDecimal recaudadoMes) {
         this.recaudadoMes = recaudadoMes;
+    }
+
+    public List<Socio> getCumpleaniosHoy() {
+        return cumpleaniosHoy;
+    }
+
+    public void setCumpleaniosHoy(List<Socio> cumpleaniosHoy) {
+        this.cumpleaniosHoy = cumpleaniosHoy;
     }
 }
