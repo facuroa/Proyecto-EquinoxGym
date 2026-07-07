@@ -36,12 +36,18 @@
         <div th:if="${error == 'dniObligatorio'}" class="premium-alert-danger mb-4">
             El DNI es obligatorio para crear un socio.
         </div>
+        <div th:if="${error == 'cuotaYaPagada'}" class="premium-alert-danger mb-4">
+            Esta cuota ya fue pagada. No se puede registrar el mismo pago dos veces.
+        </div>
+        <div th:if="${error == 'pagoInvalido'}" class="premium-alert-danger mb-4">
+            No se pudo registrar el pago. Revisá que el monto sea mayor a cero y que el medio de pago esté seleccionado.
+        </div>
 
         <!-- Buscador -->
         <section class="form-section">
             <div class="premium-form-card cobro-search-card">
-    <div class="premium-form-header">
-        <h3>Buscar socio</h3>
+                <div class="premium-form-header">
+                    <h3>Buscar socio</h3>
                     <span>Escribí nombre, apellido o DNI</span>
                 </div>
                 <div class="premium-form-body">
@@ -75,23 +81,32 @@
                             <label class="form-label premium-label">Apellido</label>
                             <input type="text" name="apellido" class="form-control premium-input" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label premium-label">DNI</label>
                             <input type="text" name="dni" class="form-control premium-input"
                                    th:value="${dniSugerido}" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label premium-label">Teléfono</label>
                             <input type="text" name="telefono" class="form-control premium-input">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <label class="form-label premium-label">Correo electrónico</label>
+                            <input type="email" name="email" class="form-control premium-input" placeholder="socio@email.com">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label premium-label">Fecha de nacimiento</label>
+                            <input type="date" name="fechaNacimiento" class="form-control premium-input">
+                            <small class="premium-help-text">Se usará para cumpleaños.</small>
+                        </div>
+                        <div class="col-md-4">
                             <label class="form-label premium-label">Plan</label>
                             <select name="planId" class="form-select premium-input premium-select" required>
                                 <option value="">Seleccione un plan</option>
                                 <option th:each="p : ${planes}" th:value="${p.id}" th:text="${p.getDescripcion()}"></option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label premium-label">Fecha de inicio del plan</label>
                             <input type="date" name="fechaInicioPlan" class="form-control premium-input">
                             <small class="premium-help-text">Si la dejás vacía, se usa la fecha de hoy.</small>
@@ -132,12 +147,17 @@
                         </div>
                         <div class="cobro-info-item">
                             <span class="metric-label">Próximo vencimiento</span>
-                            <strong th:text="${socio.fechaVencimientoPlan != null ? socio.fechaVencimientoPlan : '-'}">-</strong>
+                            <strong th:if="${cuotaPendiente != null}" th:text="${cuotaPendiente.fechaVencimiento}">-</strong>
+                            <strong th:if="${cuotaPendiente == null and socio.tieneCuotas()}" th:text="${socio.fechaVencimientoPlan != null ? socio.fechaVencimientoPlan : '-'}">-</strong>
+                            <strong th:if="${cuotaPendiente == null and !socio.tieneCuotas()}">-</strong>
+                            <br>
+                            <small class="premium-help-text" th:if="${cuotaPendiente != null}" th:text="${cuotaPendiente.textoVencimiento}">Faltan días</small>
+                            <small class="premium-help-text" th:if="${cuotaPendiente == null and socio.tieneCuotas()}" th:text="${socio.textoVencimientoPlan}">Faltan días</small>
                         </div>
                     </div>
 
-                    <!-- Caso 1: el socio no tiene plan asignado -->
-                    <div th:if="${socio.plan == null}" class="cobro-subseccion">
+                    <!-- Caso 1: el socio no tiene plan ni cuota pendiente -->
+                    <div th:if="${socio.plan == null and cuotaPendiente == null}" class="cobro-subseccion">
                         <h4>Este socio no tiene un plan activo</h4>
                         <form th:action="@{/cobrar/asignar-plan}" method="post" class="row g-3 align-items-end">
                             <input type="hidden" name="socioId" th:value="${socio.id}">
@@ -158,13 +178,14 @@
                         </form>
                     </div>
 
-                    <!-- Caso 2: tiene plan y una cuota pendiente -->
-                    <div th:if="${socio.plan != null and cuotaPendiente != null}" class="cobro-subseccion">
+                    <!-- Caso 2: tiene una cuota pendiente, incluso si está vencida -->
+                    <div th:if="${cuotaPendiente != null}" class="cobro-subseccion">
                         <h4>Cuota pendiente</h4>
                         <div class="cobro-cuota-resumen">
                             <div>
                                 <span class="metric-label">Vencimiento</span>
-                                <strong th:text="${cuotaPendiente.fechaVencimiento}">-</strong>
+                                <strong th:text="${cuotaPendiente.fechaVencimiento}">-</strong><br>
+                                <small class="premium-help-text" th:text="${cuotaPendiente.textoVencimiento}">Faltan días</small>
                             </div>
                             <div>
                                 <span class="metric-label">Monto</span>
@@ -177,7 +198,7 @@
                             <input type="hidden" name="socioId" th:value="${socio.id}">
                             <div class="col-md-4">
                                 <label class="form-label premium-label">Monto a cobrar</label>
-                                <input type="number" step="0.01" min="0" name="monto" class="form-control premium-input"
+                                <input type="number" step="0.01" min="0.01" name="monto" class="form-control premium-input"
                                        th:value="${cuotaPendiente.monto}" required>
                             </div>
                             <div class="col-md-4">
@@ -217,7 +238,6 @@
     buscarInput.addEventListener('input', function () {
         clearTimeout(timeoutId);
         const texto = this.value.trim();
-
         if (texto.length < 2) {
             resultados.innerHTML = '';
             resultados.classList.remove('show');
