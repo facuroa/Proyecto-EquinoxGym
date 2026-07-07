@@ -150,14 +150,16 @@ public class CobroService {
     public Pago registrarPago(Cuota cuota, BigDecimal monto, String medioPago) {
         validarPago(cuota, monto, medioPago);
 
+        LocalDate fechaPago = LocalDate.now();
+
         Pago pago = new Pago();
         pago.setCuota(cuota);
         pago.setMonto(monto);
         pago.setMedioPago(medioPago.trim());
-        pago.setFechaPago(LocalDate.now());
+        pago.setFechaPago(fechaPago);
         pagoRepository.save(pago);
 
-        cuota.setFechaPago(LocalDate.now());
+        cuota.setFechaPago(fechaPago);
         cuotaService.actualizarEstadoCuota(cuota);
         cuotaRepository.save(cuota);
 
@@ -166,7 +168,7 @@ public class CobroService {
             socioService.actualizarEstadoSocio(socio);
 
             if (socio.getPlan() != null) {
-                generarSiguienteCuota(socio, cuota);
+                generarSiguienteCuota(socio, cuota, fechaPago);
             }
 
             socioRepository.save(socio);
@@ -190,9 +192,21 @@ public class CobroService {
         }
     }
 
-    private void generarSiguienteCuota(Socio socio, Cuota cuotaPagada) {
-        LocalDate proximoVencimiento = cuotaPagada.getFechaVencimiento()
-                .plusMonths(socio.getPlan().getDuracionMeses());
+    private void generarSiguienteCuota(Socio socio, Cuota cuotaPagada, LocalDate fechaPago) {
+        LocalDate vencimientoPagado = cuotaPagada.getFechaVencimiento();
+
+        // Regla de negocio:
+        // - Si el socio paga antes o el mismo día del vencimiento, conserva la fecha original de renovación.
+        // - Si paga una cuota vencida, la nueva vigencia arranca desde la fecha real de pago.
+        LocalDate baseRenovacion = (vencimientoPagado != null && vencimientoPagado.isBefore(fechaPago))
+                ? fechaPago
+                : vencimientoPagado;
+
+        if (baseRenovacion == null) {
+            baseRenovacion = fechaPago;
+        }
+
+        LocalDate proximoVencimiento = baseRenovacion.plusMonths(socio.getPlan().getDuracionMeses());
 
         boolean yaExiste = socio.getCuotas().stream()
                 .anyMatch(c -> c.getFechaVencimiento() != null
@@ -206,7 +220,7 @@ public class CobroService {
             siguienteCuota.setEstado(EstadoCuota.PENDIENTE);
             cuotaRepository.save(siguienteCuota);
 
-            socio.setFechaInicioPlan(cuotaPagada.getFechaVencimiento().plusDays(1));
+            socio.setFechaInicioPlan(baseRenovacion.plusDays(1));
             socio.setFechaVencimientoPlan(proximoVencimiento);
         }
     }
