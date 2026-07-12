@@ -170,7 +170,7 @@ public class CuotaController {
         return "redirect:/cuotas";
     }
 
-    @GetMapping("/cuotas/eliminar/{id}")
+    @PostMapping("/cuotas/eliminar/{id}")
     public String eliminarCuota(@PathVariable Long id) {
         Cuota cuota = cuotaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cuota no encontrada"));

@@ -66,7 +66,7 @@ public class PlanController {
         return "redirect:/planes";
     }
 
-    @GetMapping("/eliminar/{id}")
+    @PostMapping("/eliminar/{id}")
     public String eliminar(@PathVariable Long id) {
         planRepository.deleteById(id);
         return "redirect:/planes";

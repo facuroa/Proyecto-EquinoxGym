@@ -163,7 +163,7 @@ public class SocioController {
         return "redirect:/socios";
     }
 
-    @GetMapping("/socios/eliminar/{id}")
+    @PostMapping("/socios/eliminar/{id}")
     public String eliminarSocio(@PathVariable Long id) {
         Socio socio = socioRepository.findById(id).orElse(null);
 

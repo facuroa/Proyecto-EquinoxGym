@@ -13,7 +13,9 @@
       </div>
       <div class="modal-footer premium-modal-footer">
         <button type="button" class="btn btn-outline-gold-soft" data-bs-dismiss="modal">Cancelar</button>
-        <a id="confirmDeleteButton" href="#" class="btn btn-delete-premium">Sí, eliminar</a>
+        <form id="confirmDeleteForm" th:action="@{/}" method="post" class="m-0">
+          <button id="confirmDeleteButton" type="submit" class="btn btn-delete-premium">Sí, eliminar</button>
+        </form>
       </div>
     </div>
   </div>

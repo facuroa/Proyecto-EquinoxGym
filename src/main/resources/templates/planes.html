@@ -73,7 +73,8 @@
                                         <a th:href="@{'/planes/editar/' + ${plan.id}}" class="btn btn-edit-premium btn-sm">Editar</a>
                                         <a th:href="@{'/planes/eliminar/' + ${plan.id}}"
                                            class="btn btn-delete-premium btn-sm"
-                                           onclick="return confirm('¿Eliminar este plan?')">Eliminar</a>
+                                           data-confirm-delete
+                                           th:data-mensaje="${'¿Seguro que querés eliminar el plan ' + plan.nombre + '? Esta acción no se puede deshacer.'}">Eliminar</a>
                                     </div>
                                 </td>
                             </tr>
@@ -86,5 +87,7 @@
     </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<div th:replace="~{fragments/confirm-delete-modal :: confirmDeleteModal}"></div>
+<script th:src="@{/js/confirm-delete.js}"></script>
 </body>
 </html>

@@ -338,8 +338,12 @@
         if (data.length === 0) {
             const vacio = document.createElement('div');
             vacio.className = 'cobro-resultado-vacio';
-            vacio.innerHTML = 'No se encontraron socios. ' +
-                '<a href="/cobrar?altaRapida=true&q=' + encodeURIComponent(texto) + '">+ Crear socio nuevo</a>';
+            vacio.append(document.createTextNode('No se encontraron socios. '));
+
+            const crearSocio = document.createElement('a');
+            crearSocio.href = '/cobrar?altaRapida=true&q=' + encodeURIComponent(texto);
+            crearSocio.textContent = '+ Crear socio nuevo';
+            vacio.appendChild(crearSocio);
             resultados.appendChild(vacio);
             return;
         }
@@ -353,10 +357,19 @@
                 : s.estado === 'MOROSO' ? 'status-badge-warning'
                 : s.estado === 'INACTIVO' ? 'status-badge-danger' : '';
 
-            item.innerHTML =
-                '<span class="cobro-resultado-nombre">' + s.nombreCompleto + '</span>' +
-                '<span class="cobro-resultado-dni">DNI ' + s.dni + '</span>' +
-                '<span class="status-badge ' + claseBadge + '">' + s.estado + '</span>';
+            const nombre = document.createElement('span');
+            nombre.className = 'cobro-resultado-nombre';
+            nombre.textContent = s.nombreCompleto;
+
+            const dni = document.createElement('span');
+            dni.className = 'cobro-resultado-dni';
+            dni.textContent = 'DNI ' + s.dni;
+
+            const estado = document.createElement('span');
+            estado.className = 'status-badge ' + claseBadge;
+            estado.textContent = s.estado;
+
+            item.append(nombre, dni, estado);
 
             resultados.appendChild(item);
         });

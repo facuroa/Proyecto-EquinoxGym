@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const modal = new bootstrap.Modal(modalEl);
     const mensajeEl = document.getElementById('confirmDeleteMessage');
-    const botonEl = document.getElementById('confirmDeleteButton');
+    const formularioEl = document.getElementById('confirmDeleteForm');
 
     document.querySelectorAll('[data-confirm-delete]').forEach(function (link) {
         link.addEventListener('click', function (e) {
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 || '¿Seguro que querés eliminar este registro? Esta acción no se puede deshacer.';
 
             mensajeEl.textContent = mensaje;
-            botonEl.setAttribute('href', url);
+            formularioEl.setAttribute('action', url);
             modal.show();
         });
     });
