@@ -7,11 +7,12 @@ import java.time.LocalDate;
 @Service
 public class CuotaService {
 
-    public void actualizarEstadoCuota(Cuota cuota) {
+    public boolean actualizarEstadoCuota(Cuota cuota) {
         if (cuota == null || cuota.getFechaVencimiento() == null) {
-            return;
+            return false;
         }
 
+        EstadoCuota estadoAnterior = cuota.getEstado();
         LocalDate hoy = LocalDate.now();
 
         if (cuota.getFechaPago() != null) {
@@ -21,5 +22,7 @@ public class CuotaService {
         } else {
             cuota.setEstado(EstadoCuota.VENCIDA);
         }
+
+        return estadoAnterior != cuota.getEstado();
     }
 }

@@ -7,6 +7,8 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface PagoRepository extends JpaRepository<Pago, Long> {
 
@@ -43,5 +45,23 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     boolean existsByCuota_Socio_Id(Long socioId);
 
     boolean existsByCuotaRenovacionGenerada_Id(Long cuotaId);
+
+    @Query("""
+            SELECT p FROM Pago p
+            WHERE (:buscar = '' OR
+                   LOWER(COALESCE(p.cuota.socio.nombre, '')) LIKE LOWER(CONCAT('%', :buscar, '%')) OR
+                   LOWER(COALESCE(p.cuota.socio.apellido, '')) LIKE LOWER(CONCAT('%', :buscar, '%')) OR
+                   LOWER(COALESCE(p.cuota.socio.dni, '')) LIKE LOWER(CONCAT('%', :buscar, '%')))
+              AND (:medioPago = '' OR p.medioPago = :medioPago)
+              AND (:desde IS NULL OR p.fechaPago >= :desde)
+              AND (:hasta IS NULL OR p.fechaPago <= :hasta)
+              AND (:anulado IS NULL OR p.anulado = :anulado)
+            """)
+    Page<Pago> buscarPaginado(@Param("buscar") String buscar,
+                              @Param("medioPago") String medioPago,
+                              @Param("desde") LocalDate desde,
+                              @Param("hasta") LocalDate hasta,
+                              @Param("anulado") Boolean anulado,
+                              Pageable pageable);
 
 }

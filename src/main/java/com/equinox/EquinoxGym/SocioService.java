@@ -17,18 +17,20 @@ public class SocioService {
         this.cuotaService = cuotaService;
     }
 
-    public void actualizarEstadoSocio(Socio socio) {
+    public boolean actualizarEstadoSocio(Socio socio) {
         if (socio == null) {
-            return;
+            return false;
         }
 
+        EstadoSocio estadoAnterior = socio.getEstado();
+        boolean cambioAlgunaCuota = false;
         LocalDate hoy = LocalDate.now();
 
         boolean tieneVencida = false;
         boolean tieneInactivaPor20Dias = false;
 
         for (Cuota cuota : socio.getCuotas()) {
-            cuotaService.actualizarEstadoCuota(cuota);
+            cambioAlgunaCuota |= cuotaService.actualizarEstadoCuota(cuota);
 
             if (cuota.getEstado() == EstadoCuota.VENCIDA) {
                 tieneVencida = true;
@@ -47,14 +49,18 @@ public class SocioService {
         } else {
             socio.setEstado(EstadoSocio.ACTIVO);
         }
+
+        return cambioAlgunaCuota || estadoAnterior != socio.getEstado();
     }
 
     public List<Socio> listarTodosActualizados() {
         List<Socio> socios = socioRepository.findAll();
 
-        for (Socio socio : socios) {
-            actualizarEstadoSocio(socio);
-            socioRepository.save(socio);
+        List<Socio> modificados = socios.stream()
+                .filter(this::actualizarEstadoSocio)
+                .toList();
+        if (!modificados.isEmpty()) {
+            socioRepository.saveAll(modificados);
         }
 
         return socios;

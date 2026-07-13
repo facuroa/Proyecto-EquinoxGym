@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -38,4 +40,16 @@ public interface CuotaRepository extends JpaRepository<Cuota, Long> {
 
     @Query("SELECT COALESCE(SUM(c.monto), 0) FROM Cuota c WHERE c.estado = 'PAGADA' AND c.fechaPago BETWEEN :desde AND :hasta")
     BigDecimal sumarRecaudadoDelPeriodo(@Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);
+
+    @Query("""
+            SELECT c FROM Cuota c
+            WHERE (:estado IS NULL OR c.estado = :estado)
+              AND (:buscar = '' OR
+                   LOWER(COALESCE(c.socio.nombre, '')) LIKE LOWER(CONCAT('%', :buscar, '%')) OR
+                   LOWER(COALESCE(c.socio.apellido, '')) LIKE LOWER(CONCAT('%', :buscar, '%')) OR
+                   LOWER(COALESCE(c.socio.dni, '')) LIKE LOWER(CONCAT('%', :buscar, '%')))
+            """)
+    Page<Cuota> buscarPaginado(@Param("buscar") String buscar,
+                               @Param("estado") EstadoCuota estado,
+                               Pageable pageable);
 }

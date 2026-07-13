@@ -5,6 +5,9 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -33,21 +36,36 @@ public class SocioController {
     }
 
     @GetMapping("/socios")
-    public String socios(@RequestParam(name = "buscar", required = false) String buscar,
+    public String socios(@RequestParam(name = "buscar", defaultValue = "") String buscar,
+                         @RequestParam(name = "estado", defaultValue = "TODOS") String estado,
+                         @RequestParam(name = "page", defaultValue = "0") int page,
                          Model model) {
-        List<Socio> socios;
-        if (buscar != null && !buscar.trim().isEmpty()) {
-            socios = socioRepository.findByNombreContainingIgnoreCaseOrApellidoContainingIgnoreCaseOrDniContainingIgnoreCase(
-                    buscar, buscar, buscar);
-            for (Socio socio : socios) {
-                socioService.actualizarEstadoSocio(socio);
-                socioRepository.save(socio);
+        EstadoSocio estadoFiltro = null;
+        try {
+            if (!"TODOS".equalsIgnoreCase(estado)) {
+                estadoFiltro = EstadoSocio.valueOf(estado.toUpperCase());
             }
-        } else {
-            socios = socioService.listarTodosActualizados();
+        } catch (IllegalArgumentException ignored) {
+            estado = "TODOS";
         }
-        model.addAttribute("socios", socios);
-        model.addAttribute("buscar", buscar);
+
+        PageRequest paginacion = PageRequest.of(Math.max(page, 0), 15,
+                Sort.by("apellido").ascending().and(Sort.by("nombre").ascending()));
+        Page<Socio> pagina = socioRepository.buscarPaginado(buscar.trim(), estadoFiltro, paginacion);
+        List<Socio> modificados = pagina.getContent().stream()
+                .filter(socioService::actualizarEstadoSocio)
+                .toList();
+        if (!modificados.isEmpty()) {
+            socioRepository.saveAll(modificados);
+        }
+
+        model.addAttribute("socios", pagina.getContent());
+        model.addAttribute("buscar", buscar.trim());
+        model.addAttribute("estadoSeleccionado", estado.toUpperCase());
+        model.addAttribute("paginaActual", pagina.getNumber());
+        model.addAttribute("totalPaginas", pagina.getTotalPages());
+        model.addAttribute("totalElementos", pagina.getTotalElements());
+        model.addAttribute("primerElemento", pagina.getNumber() * pagina.getSize());
         return "socios";
     }
 
@@ -75,8 +93,9 @@ public class SocioController {
         if (socio == null) {
             return "redirect:/socios";
         }
-        socioService.actualizarEstadoSocio(socio);
-        socioRepository.save(socio);
+        if (socioService.actualizarEstadoSocio(socio)) {
+            socioRepository.save(socio);
+        }
         model.addAttribute("socio", socio);
         return "detalle-socio";
     }

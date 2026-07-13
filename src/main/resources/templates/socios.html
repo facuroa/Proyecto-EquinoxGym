@@ -24,30 +24,36 @@
             </div>
             <div class="topbar-status">
                 <span>Total cargados</span>
-                <strong th:text="${#lists.size(socios)}">0</strong>
+                <strong th:text="${totalElementos}">0</strong>
             </div>
         </header>
 
         <section class="socios-toolbar-section">
             <div class="socios-toolbar-card">
                 <div class="row g-3 align-items-end">
-                    <div class="col-lg-8">
+                    <div class="col-lg-9">
                         <form method="get" th:action="@{/socios}" class="w-100">
                             <label for="buscar" class="form-label premium-label">Buscar socio</label>
                             <div class="input-group premium-search-group">
                                 <input type="text" id="buscar" name="buscar" class="form-control premium-input"
                                        placeholder="Buscar por nombre, apellido o DNI" th:value="${buscar}">
-                                <button class="btn btn-gold-search" type="submit">Buscar</button>
+                                <select name="estado" class="form-select premium-input premium-filter-select" aria-label="Estado del socio">
+                                    <option value="TODOS" th:selected="${estadoSeleccionado == 'TODOS'}">Todos los estados</option>
+                                    <option value="ACTIVO" th:selected="${estadoSeleccionado == 'ACTIVO'}">Activos</option>
+                                    <option value="MOROSO" th:selected="${estadoSeleccionado == 'MOROSO'}">Morosos</option>
+                                    <option value="INACTIVO" th:selected="${estadoSeleccionado == 'INACTIVO'}">Inactivos</option>
+                                </select>
+                                <button class="btn btn-gold-search" type="submit">Aplicar</button>
                             </div>
                         </form>
                     </div>
-                    <div class="col-lg-4">
+                    <div class="col-lg-3">
                         <div class="d-grid">
                             <a th:href="@{/socios/nuevo}" class="btn btn-gold-action">+ Nuevo socio</a>
                         </div>
                     </div>
                 </div>
-                <div class="socios-toolbar-actions" th:if="${buscar != null and !buscar.isEmpty()}">
+                <div class="socios-toolbar-actions" th:if="${(buscar != null and !buscar.isEmpty()) or estadoSeleccionado != 'TODOS'}">
                     <a th:href="@{/socios}" class="btn btn-outline-gold-soft btn-sm">Mostrar todos</a>
                 </div>
             </div>
@@ -143,6 +149,16 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+                <div class="premium-pagination-bar" th:if="${totalElementos > 0}">
+                    <span th:text="${'Mostrando ' + (primerElemento + 1) + '–' + (primerElemento + #lists.size(socios)) + ' de ' + totalElementos}">Mostrando resultados</span>
+                    <nav class="premium-pagination" aria-label="Páginas de socios">
+                        <a th:classappend="${paginaActual == 0} ? ' disabled'"
+                           th:href="@{/socios(page=${paginaActual - 1},buscar=${buscar},estado=${estadoSeleccionado})}">Anterior</a>
+                        <strong th:text="${'Página ' + (paginaActual + 1) + ' de ' + totalPaginas}">Página 1 de 1</strong>
+                        <a th:classappend="${paginaActual + 1 >= totalPaginas} ? ' disabled'"
+                           th:href="@{/socios(page=${paginaActual + 1},buscar=${buscar},estado=${estadoSeleccionado})}">Siguiente</a>
+                    </nav>
                 </div>
             </div>
         </section>

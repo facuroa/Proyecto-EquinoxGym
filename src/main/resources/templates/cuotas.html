@@ -34,7 +34,7 @@
             </div>
             <div class="topbar-status">
                 <span>Cuotas visibles</span>
-                <strong th:text="${#lists.size(cuotas)}">0</strong>
+                <strong th:text="${totalElementos}">0</strong>
             </div>
         </header>
 
@@ -43,15 +43,17 @@
                 <div class="row g-3 align-items-end">
                     <div class="col-lg-12">
                         <form th:action="@{/cuotas}" method="get" class="w-100">
-                            <label for="estado" class="form-label premium-label">Filtrar por estado</label>
+                            <label for="buscar" class="form-label premium-label">Buscar y filtrar cuotas</label>
                             <div class="input-group premium-search-group">
+                                <input type="text" id="buscar" name="buscar" class="form-control premium-input"
+                                       th:value="${buscar}" placeholder="Socio, apellido o DNI">
                                 <select id="estado" class="form-select premium-input premium-select" name="estado">
                                     <option value="TODAS" th:selected="${estadoSeleccionado == 'TODAS'}">Todas las cuotas</option>
                                     <option value="PENDIENTE" th:selected="${estadoSeleccionado == 'PENDIENTE'}">Vigentes / por vencer</option>
                                     <option value="PAGADA" th:selected="${estadoSeleccionado == 'PAGADA'}">Pagadas</option>
                                     <option value="VENCIDA" th:selected="${estadoSeleccionado == 'VENCIDA'}">Vencidas</option>
                                 </select>
-                                <button type="submit" class="btn btn-gold-search">Filtrar</button>
+                                <button type="submit" class="btn btn-gold-search">Aplicar</button>
                             </div>
                         </form>
                     </div>
@@ -67,7 +69,7 @@
                 <div class="col-md-6">
                     <div class="metric-card">
                         <span class="metric-label">Cuotas visibles</span>
-                        <div class="metric-value" th:text="${#lists.size(cuotas)}">0</div>
+                        <div class="metric-value" th:text="${totalElementos}">0</div>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -109,7 +111,7 @@
                                 <td colspan="8" class="text-center py-5 empty-state-cell">No se encontraron cuotas.</td>
                             </tr>
                             <tr th:each="cuota, iterStat : ${cuotas}">
-                                <td th:text="${iterStat.count}">1</td>
+                                <td th:text="${primerElemento + iterStat.count}">1</td>
                                 <td th:text="${cuota.socio != null ? cuota.socio.nombreCompleto : 'Sin socio'}">Socio</td>
                                 <td th:text="${cuota.fechaVencimiento}">2026-03-26</td>
                                 <td>
@@ -140,6 +142,16 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+                <div class="premium-pagination-bar" th:if="${totalElementos > 0}">
+                    <span th:text="${'Mostrando ' + (primerElemento + 1) + '–' + (primerElemento + #lists.size(cuotas)) + ' de ' + totalElementos}">Mostrando resultados</span>
+                    <nav class="premium-pagination" aria-label="Páginas de cuotas">
+                        <a th:classappend="${paginaActual == 0} ? ' disabled'"
+                           th:href="@{/cuotas(page=${paginaActual - 1},buscar=${buscar},estado=${estadoSeleccionado})}">Anterior</a>
+                        <strong th:text="${'Página ' + (paginaActual + 1) + ' de ' + totalPaginas}">Página 1 de 1</strong>
+                        <a th:classappend="${paginaActual + 1 >= totalPaginas} ? ' disabled'"
+                           th:href="@{/cuotas(page=${paginaActual + 1},buscar=${buscar},estado=${estadoSeleccionado})}">Siguiente</a>
+                    </nav>
                 </div>
             </div>
         </section>

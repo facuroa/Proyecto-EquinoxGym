@@ -4,9 +4,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Controller
 public class PagoController {
@@ -27,45 +30,44 @@ public class PagoController {
     }
 
     @GetMapping("/pagos")
-    public String listarPagos(@RequestParam(name = "buscar", required = false) String buscar,
+    public String listarPagos(@RequestParam(name = "buscar", defaultValue = "") String buscar,
+                              @RequestParam(name = "medioPago", defaultValue = "") String medioPago,
+                              @RequestParam(name = "desde", required = false) LocalDate desde,
+                              @RequestParam(name = "hasta", required = false) LocalDate hasta,
+                              @RequestParam(name = "estado", defaultValue = "TODOS") String estado,
+                              @RequestParam(name = "page", defaultValue = "0") int page,
                               Model model) {
-        List<Cuota> cuotasImpagas = cuotaRepository.findByFechaPagoIsNullOrderByFechaVencimientoAsc();
-        for (Cuota cuota : cuotasImpagas) {
-            cuotaService.actualizarEstadoCuota(cuota);
-        }
-        cuotaRepository.saveAll(cuotasImpagas);
-
-        List<Pago> pagos = pagoRepository.findAllByOrderByFechaPagoDescIdDesc();
-        if (buscar != null && !buscar.trim().isEmpty()) {
-            String texto = buscar.trim().toLowerCase();
-            pagos = pagos.stream()
-                    .filter(pago -> {
-                        String nombre = "", dni = "";
-                        String medio = pago.getMedioPago() != null ? pago.getMedioPago().toLowerCase() : "";
-                        String fecha = pago.getFechaPago() != null ? pago.getFechaPago().toString() : "";
-                        if (pago.getCuota() != null && pago.getCuota().getSocio() != null) {
-                            Socio s = pago.getCuota().getSocio();
-                            nombre = s.getNombreCompleto() != null ? s.getNombreCompleto().toLowerCase() : "";
-                            dni = s.getDni() != null ? s.getDni().toLowerCase() : "";
-                        }
-                        return nombre.contains(texto) || dni.contains(texto)
-                                || medio.contains(texto) || fecha.contains(texto);
-                    })
-                    .collect(Collectors.toList());
+        Boolean anulado = switch (estado.toUpperCase()) {
+            case "CONFIRMADOS" -> false;
+            case "ANULADOS" -> true;
+            default -> null;
+        };
+        if (anulado == null) {
+            estado = "TODOS";
         }
 
-        model.addAttribute("pagos", pagos);
-        model.addAttribute("buscar", buscar);
+        PageRequest paginacion = PageRequest.of(Math.max(page, 0), 15,
+                Sort.by("fechaPago").descending().and(Sort.by("id").descending()));
+        Page<Pago> pagina = pagoRepository.buscarPaginado(
+                buscar.trim(), medioPago.trim(), desde, hasta, anulado, paginacion);
+
+        model.addAttribute("pagos", pagina.getContent());
+        model.addAttribute("buscar", buscar.trim());
+        model.addAttribute("medioPago", medioPago.trim());
+        model.addAttribute("desde", desde);
+        model.addAttribute("hasta", hasta);
+        model.addAttribute("estadoSeleccionado", estado.toUpperCase());
+        model.addAttribute("paginaActual", pagina.getNumber());
+        model.addAttribute("totalPaginas", pagina.getTotalPages());
+        model.addAttribute("totalElementos", pagina.getTotalElements());
+        model.addAttribute("primerElemento", pagina.getNumber() * pagina.getSize());
         return "pagos";
     }
 
     @GetMapping("/pagos/nuevo")
     public String mostrarFormularioPago(Model model) {
         List<Cuota> cuotasImpagas = cuotaRepository.findByFechaPagoIsNullOrderByFechaVencimientoAsc();
-        for (Cuota cuota : cuotasImpagas) {
-            cuotaService.actualizarEstadoCuota(cuota);
-        }
-        cuotaRepository.saveAll(cuotasImpagas);
+        guardarCuotasConEstadoModificado(cuotasImpagas);
 
         model.addAttribute("pago", new Pago());
         model.addAttribute("cuotasPendientes", cuotasImpagas);
@@ -110,13 +112,19 @@ public class PagoController {
 
     private void agregarErrorPago(Model model, Pago pago, String mensaje) {
         List<Cuota> cuotasImpagas = cuotaRepository.findByFechaPagoIsNullOrderByFechaVencimientoAsc();
-        for (Cuota cuota : cuotasImpagas) {
-            cuotaService.actualizarEstadoCuota(cuota);
-        }
-        cuotaRepository.saveAll(cuotasImpagas);
+        guardarCuotasConEstadoModificado(cuotasImpagas);
 
         model.addAttribute("pago", pago);
         model.addAttribute("cuotasPendientes", cuotasImpagas);
         model.addAttribute("error", mensaje);
+    }
+
+    private void guardarCuotasConEstadoModificado(List<Cuota> cuotas) {
+        List<Cuota> modificadas = cuotas.stream()
+                .filter(cuotaService::actualizarEstadoCuota)
+                .toList();
+        if (!modificadas.isEmpty()) {
+            cuotaRepository.saveAll(modificadas);
+        }
     }
 }

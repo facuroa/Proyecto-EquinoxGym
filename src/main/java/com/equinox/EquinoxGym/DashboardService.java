@@ -31,9 +31,11 @@ public class DashboardService {
     public DashboardDTO obtenerResumen() {
         List<Socio> socios = socioRepository.findAll();
 
-        for (Socio socio : socios) {
-            socioService.actualizarEstadoSocio(socio);
-            socioRepository.save(socio);
+        List<Socio> modificados = socios.stream()
+                .filter(socioService::actualizarEstadoSocio)
+                .toList();
+        if (!modificados.isEmpty()) {
+            socioRepository.saveAll(modificados);
         }
 
         LocalDate hoy = LocalDate.now();

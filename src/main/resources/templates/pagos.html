@@ -25,30 +25,44 @@
             </div>
             <div class="topbar-status">
                 <span>Pagos visibles</span>
-                <strong th:text="${#lists.size(pagos)}">0</strong>
+                <strong th:text="${totalElementos}">0</strong>
             </div>
         </header>
 
         <section class="pagos-toolbar-section">
             <div class="socios-toolbar-card">
                 <div class="row g-3 align-items-end">
-                    <div class="col-lg-8">
+                    <div class="col-lg-9">
                         <form th:action="@{/pagos}" method="get" class="w-100">
-                            <label for="buscar" class="form-label premium-label">Buscar pago</label>
-                            <div class="input-group premium-search-group">
+                            <label for="buscar" class="form-label premium-label">Buscar y filtrar pagos</label>
+                            <div class="payment-filter-grid">
                                 <input type="text" id="buscar" class="form-control premium-input" name="buscar"
-                                       th:value="${buscar}" placeholder="Buscar por socio, DNI, medio de pago o fecha">
-                                <button type="submit" class="btn btn-gold-search">Buscar</button>
+                                       th:value="${buscar}" placeholder="Socio, apellido o DNI">
+                                <select class="form-select premium-input premium-filter-select" name="medioPago" aria-label="Medio de pago">
+                                    <option value="" th:selected="${medioPago == ''}">Todos los medios</option>
+                                    <option value="Efectivo" th:selected="${medioPago == 'Efectivo'}">Efectivo</option>
+                                    <option value="Transferencia" th:selected="${medioPago == 'Transferencia'}">Transferencia</option>
+                                    <option value="Tarjeta" th:selected="${medioPago == 'Tarjeta'}">Tarjeta</option>
+                                </select>
+                                <select class="form-select premium-input premium-filter-select" name="estado" aria-label="Estado del pago">
+                                    <option value="TODOS" th:selected="${estadoSeleccionado == 'TODOS'}">Todos los estados</option>
+                                    <option value="CONFIRMADOS" th:selected="${estadoSeleccionado == 'CONFIRMADOS'}">Confirmados</option>
+                                    <option value="ANULADOS" th:selected="${estadoSeleccionado == 'ANULADOS'}">Anulados</option>
+                                </select>
+                                <input type="date" class="form-control premium-input" name="desde" th:value="${desde}" aria-label="Fecha desde" title="Desde">
+                                <input type="date" class="form-control premium-input" name="hasta" th:value="${hasta}" aria-label="Fecha hasta" title="Hasta">
+                                <button type="submit" class="btn btn-gold-search">Aplicar filtros</button>
                             </div>
                         </form>
                     </div>
-                    <div class="col-lg-4">
+                    <div class="col-lg-3">
                         <div class="d-grid">
                             <a th:href="@{/pagos/nuevo}" class="btn btn-gold-action">+ Registrar pago</a>
                         </div>
                     </div>
                 </div>
-                <div class="socios-toolbar-actions" th:if="${buscar != null and !buscar.isEmpty()}">
+                <div class="socios-toolbar-actions"
+                     th:if="${(buscar != null and !buscar.isEmpty()) or medioPago != '' or desde != null or hasta != null or estadoSeleccionado != 'TODOS'}">
                     <a th:href="@{/pagos}" class="btn btn-outline-gold-soft btn-sm">Mostrar todos</a>
                 </div>
             </div>
@@ -59,7 +73,7 @@
                 <div class="col-md-4">
                     <div class="metric-card">
                         <span class="metric-label">Pagos visibles</span>
-                        <div class="metric-value" th:text="${#lists.size(pagos)}">0</div>
+                        <div class="metric-value" th:text="${totalElementos}">0</div>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -106,7 +120,7 @@
                                 <td colspan="9" class="text-center py-5 empty-state-cell">No se encontraron pagos.</td>
                             </tr>
                             <tr th:each="pago, iterStat : ${pagos}" th:classappend="${pago.anulado} ? 'pago-anulado'">
-                                <td th:text="${iterStat.count}">1</td>
+                                <td th:text="${primerElemento + iterStat.count}">1</td>
                                 <td th:text="${pago.cuota != null and pago.cuota.socio != null ? pago.cuota.socio.nombreCompleto : 'Sin socio'}">Sin socio</td>
                                 <td th:text="${pago.cuota != null and pago.cuota.socio != null ? pago.cuota.socio.dni : '-'}">-</td>
                                 <td th:text="${pago.fechaPago}">2026-03-26</td>
@@ -140,6 +154,16 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+                <div class="premium-pagination-bar" th:if="${totalElementos > 0}">
+                    <span th:text="${'Mostrando ' + (primerElemento + 1) + '–' + (primerElemento + #lists.size(pagos)) + ' de ' + totalElementos}">Mostrando resultados</span>
+                    <nav class="premium-pagination" aria-label="Páginas de pagos">
+                        <a th:classappend="${paginaActual == 0} ? ' disabled'"
+                           th:href="@{/pagos(page=${paginaActual - 1},buscar=${buscar},medioPago=${medioPago},desde=${desde},hasta=${hasta},estado=${estadoSeleccionado})}">Anterior</a>
+                        <strong th:text="${'Página ' + (paginaActual + 1) + ' de ' + totalPaginas}">Página 1 de 1</strong>
+                        <a th:classappend="${paginaActual + 1 >= totalPaginas} ? ' disabled'"
+                           th:href="@{/pagos(page=${paginaActual + 1},buscar=${buscar},medioPago=${medioPago},desde=${desde},hasta=${hasta},estado=${estadoSeleccionado})}">Siguiente</a>
+                    </nav>
                 </div>
             </div>
         </section>
