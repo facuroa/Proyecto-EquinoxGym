@@ -120,6 +120,7 @@ public class CobroService {
      * Devuelve la cuota creada para poder cobrarla inmediatamente si corresponde.
      */
     public Cuota asignarPlanAExistente(Socio socio, Plan plan, LocalDate fechaInicio) {
+        validarAsignacionPlan(socio, plan);
         Cuota primeraCuota = asignarPlanYCrearPrimeraCuota(socio, plan, fechaInicio);
         socioRepository.save(socio);
         return cuotaRepository.save(primeraCuota);
@@ -181,7 +182,8 @@ public class CobroService {
         if (cuota == null) {
             throw new IllegalArgumentException("La cuota no existe.");
         }
-        if (cuota.getFechaPago() != null) {
+        if (cuota.getFechaPago() != null
+                || (cuota.getId() != null && pagoRepository.existsByCuota_Id(cuota.getId()))) {
             throw new IllegalStateException("Esta cuota ya fue pagada.");
         }
         if (monto == null || monto.compareTo(BigDecimal.ZERO) <= 0) {
@@ -189,6 +191,19 @@ public class CobroService {
         }
         if (medioPago == null || medioPago.trim().isEmpty()) {
             throw new IllegalArgumentException("Debe seleccionar un medio de pago.");
+        }
+    }
+
+    private void validarAsignacionPlan(Socio socio, Plan plan) {
+        if (socio == null) {
+            throw new IllegalArgumentException("El socio no existe.");
+        }
+        if (plan == null || !plan.isActivo()) {
+            throw new IllegalArgumentException("El plan seleccionado no está activo.");
+        }
+        if (plan.getPrecio() == null || plan.getPrecio().compareTo(BigDecimal.ZERO) <= 0
+                || plan.getDuracionMeses() <= 0) {
+            throw new IllegalArgumentException("El plan seleccionado tiene datos inválidos.");
         }
     }
 
@@ -208,9 +223,8 @@ public class CobroService {
 
         LocalDate proximoVencimiento = baseRenovacion.plusMonths(socio.getPlan().getDuracionMeses());
 
-        boolean yaExiste = socio.getCuotas().stream()
-                .anyMatch(c -> c.getFechaVencimiento() != null
-                        && c.getFechaVencimiento().equals(proximoVencimiento));
+        boolean yaExiste = socio.getId() != null
+                && cuotaRepository.existsBySocio_IdAndFechaVencimiento(socio.getId(), proximoVencimiento);
 
         if (!yaExiste) {
             Cuota siguienteCuota = new Cuota();
@@ -220,7 +234,7 @@ public class CobroService {
             siguienteCuota.setEstado(EstadoCuota.PENDIENTE);
             cuotaRepository.save(siguienteCuota);
 
-            socio.setFechaInicioPlan(baseRenovacion.plusDays(1));
+            socio.setFechaInicioPlan(baseRenovacion);
             socio.setFechaVencimientoPlan(proximoVencimiento);
         }
     }

@@ -23,13 +23,15 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     List<Pago> findByMedioPagoAndFechaPago(String medioPago, LocalDate fechaPago);
 
-    List<Pago> findByCuotaSocioId(Long socioId);
+    List<Pago> findByCuota_Socio_Id(Long socioId);
 
-    List<Pago> findByCuotaSocioIdAndMedioPago(Long socioId, String medioPago);
+    List<Pago> findByCuota_Socio_IdAndMedioPago(Long socioId, String medioPago);
 
-    List<Pago> findByCuotaSocioIdAndFechaPago(Long socioId, LocalDate fechaPago);
+    List<Pago> findByCuota_Socio_IdAndFechaPago(Long socioId, LocalDate fechaPago);
 
-    List<Pago> findByCuotaSocioIdAndMedioPagoAndFechaPago(Long socioId, String medioPago, LocalDate fechaPago);
+    List<Pago> findByCuota_Socio_IdAndMedioPagoAndFechaPago(Long socioId, String medioPago, LocalDate fechaPago);
+
+    boolean existsByCuota_Id(Long cuotaId);
 
     @Transactional
     void deleteByCuota_Id(Long cuotaId);

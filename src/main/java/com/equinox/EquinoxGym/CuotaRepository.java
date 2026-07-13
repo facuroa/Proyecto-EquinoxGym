@@ -20,6 +20,8 @@ public interface CuotaRepository extends JpaRepository<Cuota, Long> {
 
     List<Cuota> findByFechaPagoIsNullOrderByFechaVencimientoAsc();
 
+    boolean existsBySocio_IdAndFechaVencimiento(Long socioId, LocalDate fechaVencimiento);
+
     @Query("SELECT COALESCE(SUM(c.monto), 0) FROM Cuota c WHERE c.estado = 'PAGADA' AND c.fechaPago BETWEEN :desde AND :hasta")
     BigDecimal sumarRecaudadoDelPeriodo(@Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);
 }
