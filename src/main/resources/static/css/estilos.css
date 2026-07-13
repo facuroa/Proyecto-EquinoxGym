@@ -1310,3 +1310,11 @@ a {
 .premium-modal-footer {
     border-top: 1px solid rgba(255,255,255,0.06);
 }
+
+.pago-anulado td {
+    background: rgba(220, 53, 69, 0.035) !important;
+}
+
+.pago-anulado td:not(:nth-last-child(-n+2)) {
+    opacity: 0.68;
+}

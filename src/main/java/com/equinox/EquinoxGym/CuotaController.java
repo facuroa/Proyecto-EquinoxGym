@@ -4,6 +4,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -171,13 +172,18 @@ public class CuotaController {
     }
 
     @PostMapping("/cuotas/eliminar/{id}")
-    public String eliminarCuota(@PathVariable Long id) {
+    public String eliminarCuota(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         Cuota cuota = cuotaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cuota no encontrada"));
 
         Socio socio = cuota.getSocio();
 
-        pagoRepository.deleteByCuota_Id(id);
+        if (pagoRepository.existsByCuota_Id(id)
+                || pagoRepository.existsByCuotaRenovacionGenerada_Id(id)) {
+            redirectAttributes.addFlashAttribute("error",
+                    "No se puede eliminar una cuota vinculada al historial de pagos.");
+            return "redirect:/cuotas";
+        }
         cuotaRepository.delete(cuota);
 
         if (socio != null) {

@@ -1,12 +1,15 @@
 package com.equinox.EquinoxGym;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
+import jakarta.persistence.LockModeType;
 
 public interface CuotaRepository extends JpaRepository<Cuota, Long> {
 
@@ -21,6 +24,10 @@ public interface CuotaRepository extends JpaRepository<Cuota, Long> {
     List<Cuota> findByFechaPagoIsNullOrderByFechaVencimientoAsc();
 
     boolean existsBySocio_IdAndFechaVencimiento(Long socioId, LocalDate fechaVencimiento);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Cuota c WHERE c.id = :id")
+    Optional<Cuota> findByIdForUpdate(@Param("id") Long id);
 
     @Query("SELECT COALESCE(SUM(c.monto), 0) FROM Cuota c WHERE c.estado = 'PAGADA' AND c.fechaPago BETWEEN :desde AND :hasta")
     BigDecimal sumarRecaudadoDelPeriodo(@Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);

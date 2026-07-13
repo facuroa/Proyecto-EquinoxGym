@@ -3,6 +3,7 @@ package com.equinox.EquinoxGym;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,7 +35,7 @@ public class PagoController {
         }
         cuotaRepository.saveAll(cuotasImpagas);
 
-        List<Pago> pagos = pagoRepository.findAll();
+        List<Pago> pagos = pagoRepository.findAllByOrderByFechaPagoDescIdDesc();
         if (buscar != null && !buscar.trim().isEmpty()) {
             String texto = buscar.trim().toLowerCase();
             pagos = pagos.stream()
@@ -91,6 +92,19 @@ public class PagoController {
             return "nuevo-pago";
         }
 
+        return "redirect:/pagos";
+    }
+
+    @PostMapping("/pagos/{id}/anular")
+    public String anularPago(@PathVariable Long id,
+                             @RequestParam String motivo,
+                             RedirectAttributes redirectAttributes) {
+        try {
+            cobroService.anularPago(id, motivo);
+            redirectAttributes.addFlashAttribute("mensaje", "El pago fue anulado y quedó registrado en el historial.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/pagos";
     }
 

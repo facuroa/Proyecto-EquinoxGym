@@ -2,9 +2,12 @@ package com.equinox.EquinoxGym;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -143,7 +146,7 @@ public class CobroService {
     }
 
     public void registrarPagoPorId(Long cuotaId, BigDecimal monto, String medioPago) {
-        Cuota cuota = cuotaRepository.findById(cuotaId)
+        Cuota cuota = cuotaRepository.findByIdForUpdate(cuotaId)
                 .orElseThrow(() -> new IllegalArgumentException("Cuota no encontrada"));
         registrarPago(cuota, monto, medioPago);
     }
@@ -158,7 +161,8 @@ public class CobroService {
         pago.setMonto(monto);
         pago.setMedioPago(medioPago.trim());
         pago.setFechaPago(fechaPago);
-        pagoRepository.save(pago);
+        pago.setFechaRegistro(LocalDateTime.now());
+        pago.setRegistradoPor(usuarioActual());
 
         cuota.setFechaPago(fechaPago);
         cuotaService.actualizarEstadoCuota(cuota);
@@ -169,13 +173,69 @@ public class CobroService {
             socioService.actualizarEstadoSocio(socio);
 
             if (socio.getPlan() != null) {
-                generarSiguienteCuota(socio, cuota, fechaPago);
+                pago.setCuotaRenovacionGenerada(generarSiguienteCuota(socio, cuota, fechaPago));
             }
 
             socioRepository.save(socio);
         }
 
-        return pago;
+        return pagoRepository.save(pago);
+    }
+
+    public void anularPago(Long pagoId, String motivo) {
+        if (motivo == null || motivo.trim().length() < 5) {
+            throw new IllegalArgumentException("Ingresá un motivo de al menos 5 caracteres.");
+        }
+
+        Pago pago = pagoRepository.findById(pagoId)
+                .orElseThrow(() -> new IllegalArgumentException("Pago no encontrado."));
+        if (pago.isAnulado()) {
+            throw new IllegalStateException("Este pago ya fue anulado.");
+        }
+        if (pago.getFechaRegistro() == null) {
+            throw new IllegalStateException(
+                    "Este pago es anterior al sistema de auditoría y requiere una revisión manual.");
+        }
+
+        Cuota renovacion = pago.getCuotaRenovacionGenerada();
+        if (renovacion != null) {
+            boolean renovacionConMovimientos = renovacion.getFechaPago() != null
+                    || pagoRepository.existsByCuota_IdAndAnuladoFalse(renovacion.getId());
+            if (renovacionConMovimientos) {
+                throw new IllegalStateException(
+                        "No se puede anular porque la renovación siguiente ya tiene un pago registrado.");
+            }
+            pago.setCuotaRenovacionGenerada(null);
+            pagoRepository.saveAndFlush(pago);
+            Socio socioRenovacion = renovacion.getSocio();
+            if (socioRenovacion != null && socioRenovacion.getCuotas() != null) {
+                socioRenovacion.getCuotas().removeIf(c -> c.getId() != null && c.getId().equals(renovacion.getId()));
+            }
+            cuotaRepository.delete(renovacion);
+        }
+
+        pago.setAnulado(true);
+        pago.setFechaAnulacion(LocalDateTime.now());
+        pago.setAnuladoPor(usuarioActual());
+        pago.setMotivoAnulacion(motivo.trim());
+
+        Cuota cuotaOriginal = pago.getCuota();
+        cuotaOriginal.setFechaPago(null);
+        cuotaService.actualizarEstadoCuota(cuotaOriginal);
+        cuotaRepository.save(cuotaOriginal);
+
+        Socio socio = cuotaOriginal.getSocio();
+        if (socio != null) {
+            if (socio.getPlan() != null && cuotaOriginal.getFechaVencimiento() != null) {
+                socio.setFechaVencimientoPlan(cuotaOriginal.getFechaVencimiento());
+                socio.setFechaInicioPlan(cuotaOriginal.getFechaVencimiento()
+                        .minusMonths(socio.getPlan().getDuracionMeses()));
+            }
+            socioService.actualizarEstadoSocio(socio);
+            socioRepository.save(socio);
+        }
+
+        pagoRepository.save(pago);
     }
 
     private void validarPago(Cuota cuota, BigDecimal monto, String medioPago) {
@@ -183,7 +243,7 @@ public class CobroService {
             throw new IllegalArgumentException("La cuota no existe.");
         }
         if (cuota.getFechaPago() != null
-                || (cuota.getId() != null && pagoRepository.existsByCuota_Id(cuota.getId()))) {
+                || (cuota.getId() != null && pagoRepository.existsByCuota_IdAndAnuladoFalse(cuota.getId()))) {
             throw new IllegalStateException("Esta cuota ya fue pagada.");
         }
         if (monto == null || monto.compareTo(BigDecimal.ZERO) <= 0) {
@@ -207,7 +267,7 @@ public class CobroService {
         }
     }
 
-    private void generarSiguienteCuota(Socio socio, Cuota cuotaPagada, LocalDate fechaPago) {
+    private Cuota generarSiguienteCuota(Socio socio, Cuota cuotaPagada, LocalDate fechaPago) {
         LocalDate vencimientoPagado = cuotaPagada.getFechaVencimiento();
 
         // Regla de negocio:
@@ -236,6 +296,17 @@ public class CobroService {
 
             socio.setFechaInicioPlan(baseRenovacion);
             socio.setFechaVencimientoPlan(proximoVencimiento);
+            return siguienteCuota;
         }
+        return null;
+    }
+
+    private String usuarioActual() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getName())) {
+            return "sistema";
+        }
+        return authentication.getName();
     }
 }

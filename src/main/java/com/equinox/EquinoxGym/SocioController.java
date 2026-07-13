@@ -4,6 +4,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -164,17 +165,16 @@ public class SocioController {
     }
 
     @PostMapping("/socios/eliminar/{id}")
-    public String eliminarSocio(@PathVariable Long id) {
+    public String eliminarSocio(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         Socio socio = socioRepository.findById(id).orElse(null);
 
         if (socio != null) {
-            // Borramos primero los pagos de cada cuota del socio: no se
-            // puede borrar una cuota (ni un socio) si tiene pagos asociados
-            // por la restricción de clave foránea en la tabla pagos.
-            for (Cuota cuota : socio.getCuotas()) {
-                pagoRepository.deleteByCuota_Id(cuota.getId());
+            if (pagoRepository.existsByCuota_Socio_Id(socio.getId())) {
+                redirectAttributes.addFlashAttribute("error",
+                        "No se puede eliminar un socio con historial de pagos. Podés dejarlo inactivo.");
+                return "redirect:/socios";
             }
-            socioRepository.delete(socio); // las cuotas se borran solas (cascade)
+            socioRepository.delete(socio);
         }
 
         return "redirect:/socios";

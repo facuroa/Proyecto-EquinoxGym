@@ -14,6 +14,9 @@
 
     <main class="main-content">
 
+        <div th:replace="~{fragments/toast :: toast('success', ${mensaje})}"></div>
+        <div th:replace="~{fragments/toast :: toast('error', ${error})}"></div>
+
         <header class="topbar">
             <div>
                 <p class="topbar-label">Administración de pagos</p>
@@ -93,14 +96,16 @@
                                 <th>Fecha de pago</th>
                                 <th>Monto</th>
                                 <th>Medio de pago</th>
-                                <th>Próximo vencimiento</th>
+                                <th>Registrado por</th>
+                                <th>Estado</th>
+                                <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:if="${#lists.isEmpty(pagos)}">
-                                <td colspan="7" class="text-center py-5 empty-state-cell">No se encontraron pagos.</td>
+                                <td colspan="9" class="text-center py-5 empty-state-cell">No se encontraron pagos.</td>
                             </tr>
-                            <tr th:each="pago, iterStat : ${pagos}">
+                            <tr th:each="pago, iterStat : ${pagos}" th:classappend="${pago.anulado} ? 'pago-anulado'">
                                 <td th:text="${iterStat.count}">1</td>
                                 <td th:text="${pago.cuota != null and pago.cuota.socio != null ? pago.cuota.socio.nombreCompleto : 'Sin socio'}">Sin socio</td>
                                 <td th:text="${pago.cuota != null and pago.cuota.socio != null ? pago.cuota.socio.dni : '-'}">-</td>
@@ -109,7 +114,29 @@
                                 <td>
                                     <span class="status-badge status-badge-info" th:text="${pago.medioPago}">Efectivo</span>
                                 </td>
-                                <td th:text="${pago.cuota != null and pago.cuota.socio != null and pago.cuota.socio.fechaVencimientoPlan != null ? pago.cuota.socio.fechaVencimientoPlan : '-'}">-</td>
+                                <td>
+                                    <strong th:text="${pago.registradoPor != null ? pago.registradoPor : 'Registro anterior'}">usuario</strong>
+                                    <small class="premium-help-text" th:if="${pago.fechaRegistro != null}" th:text="${pago.fechaRegistro}">-</small>
+                                </td>
+                                <td>
+                                    <span th:unless="${pago.anulado}" class="status-badge status-badge-success">Confirmado</span>
+                                    <span th:if="${pago.anulado}" class="status-badge status-badge-danger">Anulado</span>
+                                    <small th:if="${pago.anulado}" class="premium-help-text"
+                                           th:text="${'Por ' + pago.anuladoPor + ': ' + pago.motivoAnulacion}">Motivo</small>
+                                </td>
+                                <td class="text-center">
+                                    <button th:if="${!pago.anulado and pago.fechaRegistro != null}"
+                                            type="button"
+                                            class="btn btn-delete-premium btn-sm"
+                                            data-anular-pago
+                                            th:data-url="@{/pagos/{id}/anular(id=${pago.id})}"
+                                            th:data-socio="${pago.cuota != null and pago.cuota.socio != null ? pago.cuota.socio.nombreCompleto : 'este socio'}">
+                                        Anular
+                                    </button>
+                                    <span th:if="${pago.anulado}" class="text-muted">Sin acciones</span>
+                                    <span th:if="${!pago.anulado and pago.fechaRegistro == null}"
+                                          class="text-muted" title="Pago anterior al sistema de auditoría">Histórico</span>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -119,6 +146,50 @@
 
     </main>
 </div>
+
+<div class="modal fade" id="anularPagoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content premium-modal-content">
+            <div class="modal-header premium-modal-header">
+                <h5 class="modal-title">Anular pago</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="anularPagoForm" th:action="@{/}" method="post">
+                <div class="modal-body premium-modal-body">
+                    <p id="anularPagoMensaje">El movimiento quedará visible en el historial.</p>
+                    <label for="motivoAnulacion" class="form-label premium-label">Motivo de la anulación</label>
+                    <textarea id="motivoAnulacion" name="motivo" class="form-control premium-input"
+                              rows="3" minlength="5" maxlength="500" required
+                              placeholder="Ej: pago cargado por error"></textarea>
+                    <small class="premium-help-text">Esta acción revierte la cuota, pero conserva la auditoría.</small>
+                </div>
+                <div class="modal-footer premium-modal-footer">
+                    <button type="button" class="btn btn-outline-gold-soft" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-delete-premium">Confirmar anulación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalElement = document.getElementById('anularPagoModal');
+        const modal = new bootstrap.Modal(modalElement);
+        const form = document.getElementById('anularPagoForm');
+        const mensaje = document.getElementById('anularPagoMensaje');
+        const motivo = document.getElementById('motivoAnulacion');
+
+        document.querySelectorAll('[data-anular-pago]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                form.setAttribute('action', this.dataset.url);
+                mensaje.textContent = 'Vas a anular el pago de ' + this.dataset.socio
+                    + '. El movimiento seguirá visible en el historial.';
+                motivo.value = '';
+                modal.show();
+            });
+        });
+    });
+</script>
 </body>
 </html>

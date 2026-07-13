@@ -43,7 +43,7 @@ public class DashboardService {
         long sociosInactivos = socioRepository.countByEstado(EstadoSocio.INACTIVO);
 
         long cuotasVencidas = cuotaRepository.countByEstado(EstadoCuota.VENCIDA);
-        long cuotasPagadasMes = pagoRepository.countByFechaPagoBetween(inicioMes, finMes);
+        long cuotasPagadasMes = pagoRepository.countByFechaPagoBetweenAndAnuladoFalse(inicioMes, finMes);
 
         BigDecimal recaudadoMes = pagoRepository.obtenerTotalRecaudadoDelMes(inicioMes, finMes);
         if (recaudadoMes == null) {

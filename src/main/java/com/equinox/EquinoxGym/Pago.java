@@ -2,12 +2,15 @@ package com.equinox.EquinoxGym;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -22,9 +25,13 @@ public class Pago {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "cuota_id", nullable = false, unique = true)
+    @ManyToOne
+    @JoinColumn(name = "cuota_id", nullable = false)
     private Cuota cuota;
+
+    @OneToOne
+    @JoinColumn(name = "cuota_renovacion_generada_id")
+    private Cuota cuotaRenovacionGenerada;
 
     @Transient
     private Long cuotaId;
@@ -38,6 +45,15 @@ public class Pago {
 
     @NotNull(message = "El medio de pago es obligatorio")
     private String medioPago;
+
+    private LocalDateTime fechaRegistro;
+    private String registradoPor;
+    private boolean anulado;
+    private LocalDateTime fechaAnulacion;
+    private String anuladoPor;
+
+    @Column(length = 500)
+    private String motivoAnulacion;
 
     public Pago() {
     }
@@ -92,4 +108,19 @@ public class Pago {
     public void setMedioPago(String medioPago) {
         this.medioPago = medioPago;
     }
+
+    public Cuota getCuotaRenovacionGenerada() { return cuotaRenovacionGenerada; }
+    public void setCuotaRenovacionGenerada(Cuota cuotaRenovacionGenerada) { this.cuotaRenovacionGenerada = cuotaRenovacionGenerada; }
+    public LocalDateTime getFechaRegistro() { return fechaRegistro; }
+    public void setFechaRegistro(LocalDateTime fechaRegistro) { this.fechaRegistro = fechaRegistro; }
+    public String getRegistradoPor() { return registradoPor; }
+    public void setRegistradoPor(String registradoPor) { this.registradoPor = registradoPor; }
+    public boolean isAnulado() { return anulado; }
+    public void setAnulado(boolean anulado) { this.anulado = anulado; }
+    public LocalDateTime getFechaAnulacion() { return fechaAnulacion; }
+    public void setFechaAnulacion(LocalDateTime fechaAnulacion) { this.fechaAnulacion = fechaAnulacion; }
+    public String getAnuladoPor() { return anuladoPor; }
+    public void setAnuladoPor(String anuladoPor) { this.anuladoPor = anuladoPor; }
+    public String getMotivoAnulacion() { return motivoAnulacion; }
+    public void setMotivoAnulacion(String motivoAnulacion) { this.motivoAnulacion = motivoAnulacion; }
 }

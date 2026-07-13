@@ -31,8 +31,15 @@ class ApplicationTests {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void eliminarPorPostSinCsrfEstaBloqueado() throws Exception {
-        mockMvc.perform(post("/socios/eliminar/1"))
-                .andExpect(status().isForbidden());
+	void eliminarPorPostSinCsrfEstaBloqueado() throws Exception {
+		mockMvc.perform(post("/socios/eliminar/1"))
+				.andExpect(status().isForbidden());
+	}
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void historialDePagosConAuditoriaRenderizaCorrectamente() throws Exception {
+        mockMvc.perform(get("/pagos"))
+                .andExpect(status().isOk());
     }
 }

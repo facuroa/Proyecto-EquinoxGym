@@ -7,15 +7,16 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.transaction.annotation.Transactional;
 
 public interface PagoRepository extends JpaRepository<Pago, Long> {
 
-    @Query("SELECT COALESCE(SUM(p.monto), 0) FROM Pago p WHERE p.fechaPago BETWEEN :inicio AND :fin")
+    @Query("SELECT COALESCE(SUM(p.monto), 0) FROM Pago p WHERE p.anulado = false AND p.fechaPago BETWEEN :inicio AND :fin")
     BigDecimal obtenerTotalRecaudadoDelMes(@Param("inicio") LocalDate inicio,
                                            @Param("fin") LocalDate fin);
 
-    long countByFechaPagoBetween(LocalDate inicio, LocalDate fin);
+    long countByFechaPagoBetweenAndAnuladoFalse(LocalDate inicio, LocalDate fin);
+
+    List<Pago> findAllByOrderByFechaPagoDescIdDesc();
 
     List<Pago> findByMedioPago(String medioPago);
 
@@ -33,6 +34,10 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     boolean existsByCuota_Id(Long cuotaId);
 
-    @Transactional
-    void deleteByCuota_Id(Long cuotaId);
+    boolean existsByCuota_IdAndAnuladoFalse(Long cuotaId);
+
+    boolean existsByCuota_Socio_Id(Long socioId);
+
+    boolean existsByCuotaRenovacionGenerada_Id(Long cuotaId);
+
 }
