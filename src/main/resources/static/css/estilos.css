@@ -1311,6 +1311,102 @@ a {
     border-top: 1px solid rgba(255,255,255,0.06);
 }
 
+.socio-name-with-detail {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--text-main);
+    font-weight: 700;
+}
+
+.btn-view-socio {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 30px;
+    border-radius: 9px;
+    color: var(--gold-soft);
+    background: rgba(212, 175, 55, 0.08);
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    transition: var(--transition);
+}
+
+.btn-view-socio:hover {
+    color: var(--gold);
+    background: rgba(212, 175, 55, 0.15);
+    transform: translateY(-1px);
+}
+
+.btn-view-socio svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.detail-actions-premium {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.socio-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.socio-detail-wide {
+    grid-column: 1 / -1;
+}
+
+.socio-detail-stack {
+    display: grid;
+    gap: 1.1rem;
+}
+
+.socio-detail-item strong {
+    display: block;
+    margin-top: 0.35rem;
+    color: var(--text-main);
+    line-height: 1.45;
+}
+
+.detail-note {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.7;
+    white-space: pre-line;
+}
+
+.health-card-warning {
+    border-color: rgba(255, 193, 7, 0.26);
+}
+
+@media (max-width: 576px) {
+    .detail-actions-premium {
+        flex-direction: column;
+    }
+
+    .detail-actions-premium .btn {
+        width: 100%;
+    }
+
+    .socio-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .socio-detail-wide {
+        grid-column: auto;
+    }
+}
+
 .pago-anulado td {
     background: rgba(220, 53, 69, 0.035) !important;
 }

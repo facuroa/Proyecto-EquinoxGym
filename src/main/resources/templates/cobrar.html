@@ -103,6 +103,11 @@
                             <label class="form-label premium-label">Correo electrónico</label>
                             <input type="email" name="email" class="form-control premium-input" placeholder="socio@email.com">
                         </div>
+                        <div class="col-md-8">
+                            <label class="form-label premium-label">Domicilio actual</label>
+                            <input type="text" name="domicilioActual" class="form-control premium-input"
+                                   placeholder="Calle, número, barrio y localidad">
+                        </div>
                         <div class="col-md-4">
                             <label class="form-label premium-label">Fecha de nacimiento</label>
                             <input type="date" name="fechaNacimiento" class="form-control premium-input">
@@ -119,6 +124,20 @@
                             <label class="form-label premium-label">Fecha de inicio del plan</label>
                             <input type="date" name="fechaInicioPlan" class="form-control premium-input">
                             <small class="premium-help-text">Si la dejás vacía, se usa la fecha de hoy.</small>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="premium-form-card p-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <input class="form-check-input" type="checkbox" id="tieneLesionesRapida" name="tieneLesiones" value="true">
+                                    <label for="tieneLesionesRapida" class="form-label premium-label mb-0">Tiene lesiones o una condición física a considerar</label>
+                                </div>
+                                <div id="detalleLesionesRapidaWrapper" class="mt-3" hidden>
+                                    <label class="form-label premium-label">Detalle de lesiones o cuidados</label>
+                                    <textarea name="detalleLesiones" class="form-control premium-input" rows="3"
+                                              placeholder="Zona afectada, ejercicios a evitar, cuidados indicados, etc."></textarea>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="col-12">
@@ -308,6 +327,14 @@
     const buscarInput = document.getElementById('buscarSocio');
     const resultados = document.getElementById('resultadosBusqueda');
     let timeoutId;
+
+    const lesionesRapida = document.getElementById('tieneLesionesRapida');
+    const detalleLesionesRapida = document.getElementById('detalleLesionesRapidaWrapper');
+    if (lesionesRapida && detalleLesionesRapida) {
+        lesionesRapida.addEventListener('change', function () {
+            detalleLesionesRapida.hidden = !this.checked;
+        });
+    }
 
     buscarInput.addEventListener('input', function () {
         clearTimeout(timeoutId);

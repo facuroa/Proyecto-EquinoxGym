@@ -81,7 +81,20 @@
                                 <td colspan="8" class="text-center py-5 empty-state-cell">No se encontraron socios.</td>
                             </tr>
                             <tr th:each="socio : ${socios}">
-                                <td th:text="${socio.apellido + ', ' + socio.nombre}">Pérez, Juan</td>
+                                <td>
+                                    <div class="socio-name-with-detail">
+                                        <span th:text="${socio.apellido + ', ' + socio.nombre}">Pérez, Juan</span>
+                                        <a th:href="@{/socios/ver/{id}(id=${socio.id})}"
+                                           class="btn-view-socio"
+                                           th:aria-label="${'Ver ficha completa de ' + socio.nombreCompleto}"
+                                           title="Ver ficha completa">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <circle cx="11" cy="11" r="6"></circle>
+                                                <path d="M16 16l4 4"></path>
+                                            </svg>
+                                        </a>
+                                    </div>
+                                </td>
                                 <td th:text="${socio.dni}">12345678</td>
                                 <td>
                                     <div th:text="${socio.telefono != null and !socio.telefono.isEmpty() ? socio.telefono : '-'}">-</div>

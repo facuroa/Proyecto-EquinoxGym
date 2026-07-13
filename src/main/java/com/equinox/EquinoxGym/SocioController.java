@@ -69,6 +69,18 @@ public class SocioController {
         return "redirect:/socios";
     }
 
+    @GetMapping("/socios/ver/{id}")
+    public String verSocio(@PathVariable Long id, Model model) {
+        Socio socio = socioRepository.findById(id).orElse(null);
+        if (socio == null) {
+            return "redirect:/socios";
+        }
+        socioService.actualizarEstadoSocio(socio);
+        socioRepository.save(socio);
+        model.addAttribute("socio", socio);
+        return "detalle-socio";
+    }
+
     @PostMapping("/socios/guardar")
     public String guardarSocio(@ModelAttribute("socio") Socio socioForm,
                                @RequestParam(value = "planId", required = false) Long planId,
@@ -128,7 +140,11 @@ public class SocioController {
         socioPersistente.setDni(socioForm.getDni());
         socioPersistente.setTelefono(socioForm.getTelefono());
         socioPersistente.setEmail(socioForm.getEmail());
+        socioPersistente.setDomicilioActual(socioForm.getDomicilioActual());
         socioPersistente.setFechaNacimiento(socioForm.getFechaNacimiento());
+        socioPersistente.setTieneLesiones(socioForm.isTieneLesiones());
+        socioPersistente.setDetalleLesiones(
+                socioForm.isTieneLesiones() ? socioForm.getDetalleLesiones() : null);
         socioPersistente.setObservaciones(socioForm.getObservaciones());
 
         if (socioPersistente.getEstado() == null) {

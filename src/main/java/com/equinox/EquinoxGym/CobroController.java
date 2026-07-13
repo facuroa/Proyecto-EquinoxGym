@@ -83,7 +83,10 @@ public class CobroController {
                              @RequestParam String dni,
                              @RequestParam(required = false) String telefono,
                              @RequestParam(required = false) String email,
+                             @RequestParam(required = false) String domicilioActual,
                              @RequestParam(required = false) String fechaNacimiento,
+                             @RequestParam(value = "tieneLesiones", required = false) Boolean tieneLesiones,
+                             @RequestParam(required = false) String detalleLesiones,
                              @RequestParam Long planId,
                              @RequestParam(required = false) String fechaInicioPlan,
                              @RequestParam(value = "cobrarAlta", required = false) Boolean cobrarAlta,
@@ -111,7 +114,8 @@ public class CobroController {
 
         try {
             Socio socio = cobroService.altaRapidaConPlanYCobro(
-                    nombre, apellido, dni, telefono, email, nacimiento, plan, inicio,
+                    nombre, apellido, dni, telefono, email, domicilioActual, nacimiento,
+                    Boolean.TRUE.equals(tieneLesiones), detalleLesiones, plan, inicio,
                     cobrarAltaMarcado, montoInicial, medioPagoInicial);
 
             String mensaje = cobrarAltaMarcado ? "pagado" : "cuotaGenerada";

@@ -41,8 +41,28 @@ class CobroServiceIntegrationTests {
 
         List<Cuota> cuotas = cuotasDe(socio);
         assertThat(cuotas).hasSize(1);
-        assertThat(cuotas.get(0).getFechaVencimiento()).isEqualTo(inicio.plusMonths(1));
+        assertThat(cuotas.get(0).getFechaVencimiento()).isEqualTo(inicio);
         assertThat(cuotas.get(0).getEstado()).isEqualTo(EstadoCuota.PENDIENTE);
+    }
+
+    @Test
+    void altaCobradaHoyVenceAlFinalDeUnSoloPeriodo() {
+        Plan plan = guardarPlan("Mensual alta cobrada", 1, "27000");
+        LocalDate hoy = LocalDate.now();
+
+        Socio socio = cobroService.altaRapidaConPlanYCobro(
+                "Martina", "Gómez", "32111222", "3624000000", "martina@email.com",
+                "Av. Central 123", hoy, true, "Lesión leve de rodilla",
+                plan, hoy, true, plan.getPrecio(), "Efectivo");
+
+        assertThat(socio.getFechaInicioPlan()).isEqualTo(hoy);
+        assertThat(socio.getFechaVencimientoPlan()).isEqualTo(hoy.plusMonths(1));
+        assertThat(socio.getDiasRestantesPlan()).isBetween(28L, 31L);
+        assertThat(socio.getDomicilioActual()).isEqualTo("Av. Central 123");
+        assertThat(socio.isTieneLesiones()).isTrue();
+        assertThat(socio.getDetalleLesiones()).contains("rodilla");
+        assertThat(cuotasDe(socio)).extracting(Cuota::getFechaVencimiento)
+                .containsExactlyInAnyOrder(hoy, hoy.plusMonths(1));
     }
 
     @Test

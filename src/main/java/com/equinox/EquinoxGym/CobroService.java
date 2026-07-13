@@ -97,13 +97,36 @@ public class CobroService {
                                          BigDecimal montoInicial,
                                          String medioPagoInicial) {
 
+        return altaRapidaConPlanYCobro(nombre, apellido, dni, telefono, email, null,
+                fechaNacimiento, false, null, plan, fechaInicio,
+                cobrarAlta, montoInicial, medioPagoInicial);
+    }
+
+    public Socio altaRapidaConPlanYCobro(String nombre,
+                                         String apellido,
+                                         String dni,
+                                         String telefono,
+                                         String email,
+                                         String domicilioActual,
+                                         LocalDate fechaNacimiento,
+                                         boolean tieneLesiones,
+                                         String detalleLesiones,
+                                         Plan plan,
+                                         LocalDate fechaInicio,
+                                         boolean cobrarAlta,
+                                         BigDecimal montoInicial,
+                                         String medioPagoInicial) {
+
         Socio socio = new Socio();
         socio.setNombre(nombre);
         socio.setApellido(apellido);
         socio.setDni(dni);
         socio.setTelefono(telefono);
         socio.setEmail(email);
+        socio.setDomicilioActual(domicilioActual);
         socio.setFechaNacimiento(fechaNacimiento);
+        socio.setTieneLesiones(tieneLesiones);
+        socio.setDetalleLesiones(tieneLesiones ? detalleLesiones : null);
         socio.setEstado(EstadoSocio.ACTIVO);
 
         Socio socioGuardado = socioRepository.save(socio);
@@ -139,7 +162,9 @@ public class CobroService {
         Cuota primeraCuota = new Cuota();
         primeraCuota.setSocio(socio);
         primeraCuota.setMonto(plan.getPrecio());
-        primeraCuota.setFechaVencimiento(socio.getFechaVencimientoPlan());
+        // La primera cuota corresponde al alta y vence en la fecha de inicio.
+        // Al cobrarla se genera la renovación al final del período contratado.
+        primeraCuota.setFechaVencimiento(inicio);
         primeraCuota.setEstado(EstadoCuota.PENDIENTE);
 
         return primeraCuota;
