@@ -18,6 +18,10 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     List<Pago> findAllByOrderByFechaPagoDescIdDesc();
 
+    List<Pago> findTop6ByAnuladoFalseAndFechaPagoOrderByFechaRegistroDescIdDesc(LocalDate fechaPago);
+
+    long countByFechaPagoAndAnuladoFalse(LocalDate fechaPago);
+
     List<Pago> findByMedioPago(String medioPago);
 
     List<Pago> findByFechaPago(LocalDate fechaPago);

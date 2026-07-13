@@ -42,4 +42,11 @@ class ApplicationTests {
         mockMvc.perform(get("/pagos"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void dashboardOperativoRenderizaCorrectamente() throws Exception {
+        mockMvc.perform(get("/dashboard"))
+                .andExpect(status().isOk());
+    }
 }

@@ -1311,6 +1311,320 @@ a {
     border-top: 1px solid rgba(255,255,255,0.06);
 }
 
+/* =========================
+   DASHBOARD OPERATIVO
+========================= */
+
+.operations-hero {
+    margin-bottom: 1.4rem;
+}
+
+.operations-welcome,
+.operations-panel,
+.month-summary {
+    background: linear-gradient(180deg, rgba(27,29,34,0.98) 0%, rgba(21,23,27,0.98) 100%);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-main);
+}
+
+.operations-welcome {
+    padding: 1.5rem 1.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    background:
+        radial-gradient(circle at 90% 20%, rgba(212,175,55,0.12), transparent 28%),
+        linear-gradient(180deg, rgba(27,29,34,0.98), rgba(21,23,27,0.98));
+}
+
+.operations-welcome h2 {
+    margin: 0 0 0.4rem;
+    color: var(--text-main);
+    font-size: 1.55rem;
+    font-weight: 850;
+}
+
+.operations-welcome p {
+    margin: 0;
+    color: var(--text-soft);
+}
+
+.operations-welcome .hero-badge {
+    margin-bottom: 0.7rem;
+}
+
+.operations-quick-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+}
+
+.metric-value-compact {
+    font-size: 1.55rem;
+    overflow-wrap: anywhere;
+}
+
+.metric-card-danger-soft {
+    border-color: rgba(220, 53, 69, 0.2);
+    background: linear-gradient(180deg, rgba(53,25,29,0.8), rgba(25,22,24,0.98));
+}
+
+.metric-card-warning-soft {
+    border-color: rgba(255, 193, 7, 0.18);
+    background: linear-gradient(180deg, rgba(49,41,20,0.78), rgba(25,23,19,0.98));
+}
+
+.operations-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.4rem;
+    margin-bottom: 1.4rem;
+}
+
+.operations-panel {
+    overflow: hidden;
+}
+
+.operations-panel-header {
+    padding: 1.25rem 1.35rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.operations-panel-header h3 {
+    margin: 0.25rem 0 0;
+    color: var(--text-main);
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+.operations-kicker {
+    color: var(--gold-soft);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+.operations-kicker-danger {
+    color: #ff9aa4;
+}
+
+.operations-kicker-success {
+    color: #7ee2b8;
+}
+
+.operations-link {
+    color: var(--gold-soft);
+    font-size: 0.84rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.operations-link:hover {
+    color: var(--gold);
+}
+
+.operations-list {
+    display: grid;
+}
+
+.operations-row {
+    min-height: 70px;
+    padding: 0.9rem 1.35rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.operations-row:last-child {
+    border-bottom: none;
+}
+
+.operations-row:hover {
+    background: rgba(255,255,255,0.025);
+}
+
+.operations-row-main {
+    min-width: 0;
+}
+
+.operations-row-main strong,
+.operations-row-main span {
+    display: block;
+}
+
+.operations-row-main strong {
+    color: var(--text-main);
+    font-size: 0.95rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.operations-row-main span {
+    margin-top: 0.22rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.operations-row-side {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.7rem;
+    text-align: right;
+}
+
+.operations-row-side strong {
+    color: var(--text-soft);
+    font-size: 0.88rem;
+    white-space: nowrap;
+}
+
+.operations-row-side .operations-amount {
+    color: #7ee2b8;
+    font-size: 1rem;
+}
+
+.operations-empty {
+    padding: 2rem 1.35rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.5;
+}
+
+.birthday-today {
+    margin: 1.1rem 1.35rem 0;
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    background: rgba(212,175,55,0.09);
+    border: 1px solid rgba(212,175,55,0.18);
+}
+
+.birthday-today > span {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: var(--gold-soft);
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.birthday-today strong,
+.birthday-today a {
+    color: var(--text-main);
+}
+
+.birthday-upcoming {
+    margin-top: 0.4rem;
+}
+
+.month-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.month-summary > div {
+    padding: 1rem 1.2rem;
+    border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+.month-summary > div:last-child {
+    border-right: none;
+}
+
+.month-summary span,
+.month-summary strong {
+    display: block;
+}
+
+.month-summary span {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+}
+
+.month-summary strong {
+    margin-top: 0.25rem;
+    color: var(--text-main);
+    font-size: 1.05rem;
+}
+
+@media (max-width: 1100px) {
+    .operations-welcome {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .operations-quick-actions {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 800px) {
+    .operations-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .month-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .month-summary > div:nth-child(2) {
+        border-right: none;
+    }
+
+    .month-summary > div:nth-child(-n+2) {
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+}
+
+@media (max-width: 576px) {
+    .operations-welcome {
+        padding: 1.2rem;
+    }
+
+    .operations-quick-actions,
+    .operations-quick-actions .btn {
+        width: 100%;
+    }
+
+    .operations-row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .operations-row-side {
+        width: 100%;
+        justify-content: space-between;
+        text-align: left;
+    }
+
+    .month-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .month-summary > div,
+    .month-summary > div:nth-child(2) {
+        border-right: none;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .month-summary > div:last-child {
+        border-bottom: none;
+    }
+}
+
 .socio-name-with-detail {
     display: flex;
     align-items: center;

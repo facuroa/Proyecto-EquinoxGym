@@ -3,144 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Equinox Gym</title>
+    <title>Inicio - Equinox Gym</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/estilos.css}">
 </head>
 <body class="dashboard-body">
 <div class="dashboard-wrapper">
-
     <aside th:replace="~{fragments/sidebar :: sidebar('dashboard')}"></aside>
 
     <main class="main-content">
-
         <header class="topbar">
             <div>
-                <p class="topbar-label">Sistema de gestión</p>
-                <h1 class="topbar-title">Panel principal</h1>
-                <p class="topbar-subtitle">Bienvenido, <strong th:text="${usuarioLogueado}">admin</strong></p>
+                <p class="topbar-label">Centro de operaciones</p>
+                <h1 class="topbar-title">Resumen de hoy</h1>
+                <p class="topbar-subtitle">Hola, <strong th:text="${usuarioLogueado}">admin</strong>. Estas son las prioridades del gimnasio.</p>
             </div>
             <div class="topbar-status">
-                <span>Estado general</span>
-                <strong>EQUINOX GYM</strong>
+                <span>Estado del sistema</span>
+                <strong>OPERATIVO</strong>
             </div>
         </header>
 
-        <section class="hero-section">
-            <div class="row g-4 align-items-center">
-                <div class="col-lg-7">
-                    <div class="hero-card">
-                        <span class="hero-badge">Premium Fitness</span>
-                        <h2>Bienvenido al sistema de gestión del gimnasio Equinox</h2>
-                        <p>Administrá socios, cuotas, pagos y vencimientos desde un flujo más simple.</p>
-                        <div class="hero-actions">
-                            <a th:href="@{/cobrar}" class="btn btn-gold">Cobrar ahora</a>
-                            <a th:href="@{/socios}" class="btn btn-outline-gold">Ver socios</a>
-                        </div>
-                    </div>
+        <section class="operations-hero">
+            <div class="operations-welcome">
+                <div>
+                    <span class="hero-badge">EQUINOX GYM</span>
+                    <h2>Todo listo para gestionar el día</h2>
+                    <p>Cobrá, registrá socios y resolvé vencimientos desde un solo lugar.</p>
                 </div>
-                <div class="col-lg-5">
-                    <div class="hero-image-box">
-                        <img th:src="@{/img/logo-equinox.png}" alt="Equinox Gym" class="hero-image">
-                    </div>
+                <div class="operations-quick-actions">
+                    <a th:href="@{/cobrar}" class="btn btn-gold-action">Cobrar ahora</a>
+                    <a th:href="@{/socios/nuevo}" class="btn btn-outline-gold-soft">+ Nuevo socio</a>
+                    <a th:href="@{/socios}" class="btn btn-outline-gold-soft">Buscar socio</a>
                 </div>
-            </div>
-        </section>
-
-        <section class="form-section" th:if="${resumen.cumpleaniosHoy != null and !#lists.isEmpty(resumen.cumpleaniosHoy)}">
-            <div class="premium-alert-success">
-                <strong>Recordatorio de cumpleaños:</strong>
-                <span th:each="socio, iter : ${resumen.cumpleaniosHoy}">
-                    <span th:text="${socio.nombreCompleto}">Socio</span><span th:if="${!iter.last}">, </span>
-                </span>
-                cumple años hoy.
             </div>
         </section>
 
         <section class="metrics-section">
-            <div class="row g-4">
-                <div class="col-sm-6 col-xl-3">
-                    <div class="metric-card">
-                        <span class="metric-label">Total de socios</span>
-                        <div class="metric-value" th:text="${resumen.totalSocios}">0</div>
+            <div class="row g-3">
+                <div class="col-sm-6 col-xl-2">
+                    <div class="metric-card metric-card-highlight">
+                        <span class="metric-label">Recaudado hoy</span>
+                        <div class="metric-value metric-value-compact" th:text="${'$ ' + resumen.recaudadoHoy}">$ 0</div>
                     </div>
                 </div>
-                <div class="col-sm-6 col-xl-3">
+                <div class="col-sm-6 col-xl-2">
+                    <div class="metric-card">
+                        <span class="metric-label">Pagos de hoy</span>
+                        <div class="metric-value" th:text="${resumen.pagosHoy}">0</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-2">
+                    <div class="metric-card metric-card-danger-soft">
+                        <span class="metric-label">Cuotas vencidas</span>
+                        <div class="metric-value" th:text="${resumen.cuotasVencidas}">0</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-2">
+                    <div class="metric-card">
+                        <span class="metric-label">Vencen en 7 días</span>
+                        <div class="metric-value" th:text="${resumen.vencenProximos}">0</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-2">
                     <div class="metric-card">
                         <span class="metric-label">Socios activos</span>
                         <div class="metric-value" th:text="${resumen.sociosActivos}">0</div>
                     </div>
                 </div>
-                <div class="col-sm-6 col-xl-3">
-                    <div class="metric-card">
+                <div class="col-sm-6 col-xl-2">
+                    <div class="metric-card metric-card-warning-soft">
                         <span class="metric-label">Socios morosos</span>
                         <div class="metric-value" th:text="${resumen.sociosMorosos}">0</div>
                     </div>
                 </div>
-                <div class="col-sm-6 col-xl-3">
-                    <div class="metric-card">
-                        <span class="metric-label">Socios inactivos</span>
-                        <div class="metric-value" th:text="${resumen.sociosInactivos}">0</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="metric-card metric-card-highlight">
-                        <span class="metric-label">Recaudado del mes</span>
-                        <div class="metric-value" th:text="'$ ' + ${resumen.recaudadoMes}">$ 0</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="metric-card">
-                        <span class="metric-label">Pagos registrados del mes</span>
-                        <div class="metric-value" th:text="${resumen.cuotasPagadasMes}">0</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="metric-card">
-                        <span class="metric-label">Cuotas vencidas</span>
-                        <div class="metric-value" th:text="${resumen.cuotasVencidas}">0</div>
-                    </div>
-                </div>
             </div>
         </section>
 
-        <section class="modules-section">
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="module-card">
-                        <div class="module-accent"></div>
-                        <div class="module-body">
-                            <h3>Cobro rápido</h3>
-                            <p>Buscá por nombre o DNI, revisá vencimiento y registrá el pago desde una sola pantalla.</p>
-                            <a th:href="@{/cobrar}" class="btn btn-module">Ir al módulo</a>
+        <section class="operations-grid">
+            <article class="operations-panel">
+                <div class="operations-panel-header">
+                    <div>
+                        <span class="operations-kicker operations-kicker-danger">Requieren atención</span>
+                        <h3>Cuotas vencidas</h3>
+                    </div>
+                    <a th:href="@{/cuotas(estado='VENCIDA')}" class="operations-link">Ver todas</a>
+                </div>
+                <div class="operations-list">
+                    <div th:if="${#lists.isEmpty(resumen.cuotasVencidasPrioritarias)}" class="operations-empty">
+                        No hay cuotas vencidas pendientes. Excelente.
+                    </div>
+                    <div th:each="cuota : ${resumen.cuotasVencidasPrioritarias}" class="operations-row">
+                        <div class="operations-row-main">
+                            <strong th:text="${cuota.socio != null ? cuota.socio.nombreCompleto : 'Socio no disponible'}">Socio</strong>
+                            <span th:text="${cuota.textoVencimiento}">Vencida hace 3 días</span>
+                        </div>
+                        <div class="operations-row-side">
+                            <strong th:text="${'$ ' + cuota.monto}">$ 0</strong>
+                            <a th:if="${cuota.socio != null}" th:href="@{/cobrar(socioId=${cuota.socio.id})}" class="btn btn-delete-premium btn-sm">Resolver</a>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="module-card">
-                        <div class="module-accent"></div>
-                        <div class="module-body">
-                            <h3>Gestión de Socios</h3>
-                            <p>Administrá datos personales, contacto, cumpleaños, planes y observaciones internas.</p>
-                            <a th:href="@{/socios}" class="btn btn-module">Ir al módulo</a>
+            </article>
+
+            <article class="operations-panel">
+                <div class="operations-panel-header">
+                    <div>
+                        <span class="operations-kicker">Próximos 7 días</span>
+                        <h3>Vencimientos cercanos</h3>
+                    </div>
+                    <a th:href="@{/cuotas}" class="operations-link">Ver cuotas</a>
+                </div>
+                <div class="operations-list">
+                    <div th:if="${#lists.isEmpty(resumen.cuotasProximas)}" class="operations-empty">
+                        No hay vencimientos durante los próximos 7 días.
+                    </div>
+                    <div th:each="cuota : ${resumen.cuotasProximas}" class="operations-row">
+                        <div class="operations-row-main">
+                            <strong th:text="${cuota.socio != null ? cuota.socio.nombreCompleto : 'Socio no disponible'}">Socio</strong>
+                            <span th:text="${cuota.textoVencimiento}">Faltan 4 días</span>
+                        </div>
+                        <div class="operations-row-side">
+                            <strong th:text="${cuota.fechaVencimiento}">2026-07-20</strong>
+                            <a th:if="${cuota.socio != null}" th:href="@{/socios/ver/{id}(id=${cuota.socio.id})}" class="btn-view-socio" title="Ver socio" aria-label="Ver socio">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M16 16l4 4"></path></svg>
+                            </a>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="module-card">
-                        <div class="module-accent"></div>
-                        <div class="module-body">
-                            <h3>Historial de Pagos</h3>
-                            <p>Consultá movimientos registrados y controlá la recaudación real del sistema.</p>
-                            <a th:href="@{/pagos}" class="btn btn-module">Ir al módulo</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            </article>
         </section>
 
+        <section class="operations-grid operations-grid-secondary">
+            <article class="operations-panel">
+                <div class="operations-panel-header">
+                    <div>
+                        <span class="operations-kicker operations-kicker-success">Actividad</span>
+                        <h3>Últimos cobros de hoy</h3>
+                    </div>
+                    <a th:href="@{/pagos}" class="operations-link">Historial</a>
+                </div>
+                <div class="operations-list">
+                    <div th:if="${#lists.isEmpty(resumen.ultimosPagosHoy)}" class="operations-empty">
+                        Todavía no se registraron cobros hoy.
+                    </div>
+                    <div th:each="pago : ${resumen.ultimosPagosHoy}" class="operations-row">
+                        <div class="operations-row-main">
+                            <strong th:text="${pago.cuota != null and pago.cuota.socio != null ? pago.cuota.socio.nombreCompleto : 'Socio no disponible'}">Socio</strong>
+                            <span th:text="${pago.medioPago + ' · ' + (pago.registradoPor != null ? pago.registradoPor : 'Registro anterior')}">Efectivo</span>
+                        </div>
+                        <div class="operations-row-side">
+                            <strong class="operations-amount" th:text="${'$ ' + pago.monto}">$ 0</strong>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="operations-panel birthday-panel">
+                <div class="operations-panel-header">
+                    <div>
+                        <span class="operations-kicker">Comunidad</span>
+                        <h3>Cumpleaños</h3>
+                    </div>
+                </div>
+
+                <div th:if="${!#lists.isEmpty(resumen.cumpleaniosHoy)}" class="birthday-today">
+                    <span>Hoy</span>
+                    <strong th:each="socio, iter : ${resumen.cumpleaniosHoy}">
+                        <a th:href="@{/socios/ver/{id}(id=${socio.id})}" th:text="${socio.nombreCompleto}">Socio</a><span th:if="${!iter.last}">, </span>
+                    </strong>
+                </div>
+
+                <div class="operations-list birthday-upcoming">
+                    <div th:if="${#lists.isEmpty(resumen.cumpleaniosHoy) and #lists.isEmpty(resumen.cumpleaniosProximos)}" class="operations-empty">
+                        No hay cumpleaños durante los próximos 7 días.
+                    </div>
+                    <div th:each="socio : ${resumen.cumpleaniosProximos}" class="operations-row">
+                        <div class="operations-row-main">
+                            <strong th:text="${socio.nombreCompleto}">Socio</strong>
+                            <span>Próximo cumpleaños</span>
+                        </div>
+                        <div class="operations-row-side">
+                            <strong th:text="${socio.fechaNacimiento.dayOfMonth + '/' + socio.fechaNacimiento.monthValue}">15/7</strong>
+                            <a th:href="@{/socios/ver/{id}(id=${socio.id})}" class="operations-link">Ver</a>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section class="month-summary">
+            <div><span>Recaudado este mes</span><strong th:text="${'$ ' + resumen.recaudadoMes}">$ 0</strong></div>
+            <div><span>Pagos del mes</span><strong th:text="${resumen.cuotasPagadasMes}">0</strong></div>
+            <div><span>Total de socios</span><strong th:text="${resumen.totalSocios}">0</strong></div>
+            <div><span>Socios inactivos</span><strong th:text="${resumen.sociosInactivos}">0</strong></div>
+        </section>
     </main>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
