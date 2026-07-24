@@ -123,4 +123,8 @@ public class Pago {
     public void setAnuladoPor(String anuladoPor) { this.anuladoPor = anuladoPor; }
     public String getMotivoAnulacion() { return motivoAnulacion; }
     public void setMotivoAnulacion(String motivoAnulacion) { this.motivoAnulacion = motivoAnulacion; }
+
+    public String getNumeroComprobante() {
+        return id == null ? "EQX-PENDIENTE" : String.format("EQX-%08d", id);
+    }
 }

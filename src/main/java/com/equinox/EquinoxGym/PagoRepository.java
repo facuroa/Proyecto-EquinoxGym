@@ -3,6 +3,7 @@ package com.equinox.EquinoxGym;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,6 +21,8 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     List<Pago> findAllByOrderByFechaPagoDescIdDesc();
 
+    List<Pago> findByAnuladoFalseOrderByFechaPagoAscIdAsc();
+
     List<Pago> findTop6ByAnuladoFalseAndFechaPagoOrderByFechaRegistroDescIdDesc(LocalDate fechaPago);
 
     long countByFechaPagoAndAnuladoFalse(LocalDate fechaPago);
@@ -31,6 +34,10 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     List<Pago> findByMedioPagoAndFechaPago(String medioPago, LocalDate fechaPago);
 
     List<Pago> findByCuota_Socio_Id(Long socioId);
+
+    List<Pago> findByCuota_Socio_IdOrderByFechaPagoDescIdDesc(Long socioId);
+
+    Optional<Pago> findFirstByCuota_Socio_IdAndAnuladoFalseOrderByFechaRegistroDescIdDesc(Long socioId);
 
     List<Pago> findByCuota_Socio_IdAndMedioPago(Long socioId, String medioPago);
 

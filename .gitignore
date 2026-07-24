@@ -1,5 +1,6 @@
 HELP.md
 target/
+/distribution/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -34,3 +35,13 @@ build/
 
 # Configuracion privada de cada entorno
 src/main/resources/application-local.properties
+
+# Material comercial (demo de venta e instalador Windows): no se versiona.
+deploy/demo/
+deploy/windows/
+
+# Config local del asistente de IA, no es parte del proyecto
+.claude/
+
+# Perfil de navegador Edge que quedo suelto en esta carpeta (datos de Autofill/Wallet), no es del proyecto
+.edge-cv/

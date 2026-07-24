@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morosidad y renovaciones - Gym System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body class="dashboard-body">
+<div class="dashboard-wrapper">
+    <aside th:replace="~{fragments/sidebar :: sidebar('morosidad')}"></aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="topbar-label">Seguimiento operativo</p>
+                <h1 class="topbar-title">Morosidad y renovaciones</h1>
+                <p class="topbar-subtitle">Priorizá contactos y resolvé cuotas desde una sola mesa de trabajo.</p>
+            </div>
+            <div class="topbar-status">
+                <span>Prioridad actual</span>
+                <strong th:text="${resumen.sociosMorosos + ' morosos'}">0 morosos</strong>
+            </div>
+        </header>
+
+        <div th:if="${mensaje == 'seguimientoGuardado'}" class="premium-alert-success mb-4">
+            El contacto quedó registrado en el seguimiento del socio.
+        </div>
+        <div th:if="${errorSeguimiento}" class="premium-alert-danger mb-4" th:text="${errorSeguimiento}"></div>
+
+        <section class="metrics-section morosidad-metrics">
+            <div class="row g-3">
+                <div class="col-sm-6 col-xl-3">
+                    <div class="metric-card metric-card-danger-soft">
+                        <span class="metric-label">Socios morosos</span>
+                        <div class="metric-value" th:text="${resumen.sociosMorosos}">0</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="metric-card metric-card-highlight">
+                        <span class="metric-label">Deuda vencida</span>
+                        <div class="metric-value metric-value-compact" th:text="${'$ ' + resumen.deudaVencida}">$ 0</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="metric-card">
+                        <span class="metric-label">Vencen hoy</span>
+                        <div class="metric-value" th:text="${resumen.vencenHoy}">0</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="metric-card">
+                        <span class="metric-label">Próximos 7 días</span>
+                        <div class="metric-value" th:text="${resumen.vencenProximos}">0</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <div class="premium-form-card morosidad-filter-card">
+                <form th:action="@{/morosidad}" method="get" class="premium-form-body">
+                    <div class="morosidad-filter-grid">
+                        <div>
+                            <label for="buscarMorosidad" class="form-label premium-label">Buscar socio</label>
+                            <input id="buscarMorosidad" type="search" name="buscar" th:value="${buscar}"
+                                   class="form-control premium-input" placeholder="Nombre, DNI o teléfono">
+                        </div>
+                        <div>
+                            <label for="filtroMorosidad" class="form-label premium-label">Prioridad</label>
+                            <select id="filtroMorosidad" name="filtro" class="form-select premium-input premium-select">
+                                <option value="VENCIDAS" th:selected="${filtroSeleccionado == 'VENCIDAS'}">Todas las vencidas</option>
+                                <option value="1_7" th:selected="${filtroSeleccionado == '1_7'}">Atraso de 1 a 7 días</option>
+                                <option value="8_30" th:selected="${filtroSeleccionado == '8_30'}">Atraso de 8 a 30 días</option>
+                                <option value="MAS_30" th:selected="${filtroSeleccionado == 'MAS_30'}">Más de 30 días</option>
+                                <option value="HOY" th:selected="${filtroSeleccionado == 'HOY'}">Vencen hoy</option>
+                                <option value="PROXIMAS" th:selected="${filtroSeleccionado == 'PROXIMAS'}">Próximos 7 días</option>
+                                <option value="TODOS" th:selected="${filtroSeleccionado == 'TODOS'}">Toda la mesa</option>
+                            </select>
+                        </div>
+                        <div class="morosidad-filter-actions">
+                            <button type="submit" class="btn btn-gold-action">Aplicar</button>
+                            <a th:href="@{/morosidad}" class="btn btn-outline-gold-soft">Limpiar</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="premium-table-card">
+            <div class="premium-table-header">
+                <div>
+                    <h3>Socios a gestionar</h3>
+                    <span th:text="${totalElementos == 1 ? '1 resultado' : totalElementos + ' resultados'}">0 resultados</span>
+                </div>
+            </div>
+
+            <div th:if="${#lists.isEmpty(gestiones)}" class="morosidad-empty">
+                <strong>No hay socios en esta prioridad.</strong>
+                <span>Probá otro filtro o limpiá la búsqueda.</span>
+            </div>
+
+            <div th:unless="${#lists.isEmpty(gestiones)}" class="table-responsive">
+                <table class="table premium-table morosidad-table align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th>Socio</th>
+                        <th>Situación</th>
+                        <th>Saldo</th>
+                        <th>Último contacto</th>
+                        <th>Contacto</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="gestion : ${gestiones}">
+                        <td data-label="Socio">
+                            <div class="morosidad-socio">
+                                <strong th:text="${gestion.socio.nombreCompleto}">Socio</strong>
+                                <span th:text="${'DNI ' + gestion.socio.dni}">DNI</span>
+                            </div>
+                        </td>
+                        <td data-label="Situación">
+                            <span class="priority-badge"
+                                  th:classappend="${gestion.categoria == 'MAS_30'} ? ' priority-critical' : (${gestion.categoria == '8_30'} ? ' priority-high' : (${gestion.categoria == '1_7'} ? ' priority-recent' : ' priority-upcoming'))"
+                                  th:text="${gestion.textoSituacion}">Situación</span>
+                            <small class="morosidad-date" th:text="${'Vencimiento ' + #temporals.format(gestion.vencimientoMasAntiguo, 'dd/MM/yyyy')}">Vencimiento</small>
+                        </td>
+                        <td data-label="Saldo">
+                            <strong class="morosidad-amount" th:text="${'$ ' + gestion.saldoPendiente}">$ 0</strong>
+                            <small th:text="${gestion.cantidadCuotas == 1 ? '1 cuota pendiente' : gestion.cantidadCuotas + ' cuotas pendientes'}">1 cuota</small>
+                        </td>
+                        <td data-label="Último contacto">
+                            <div th:if="${gestion.ultimoSeguimiento != null}" class="morosidad-followup">
+                                <strong th:text="${#temporals.format(gestion.ultimoSeguimiento.fechaRegistro, 'dd/MM HH:mm')}">Fecha</strong>
+                                <span th:text="${gestion.ultimoSeguimiento.canal.descripcion + ' · ' + gestion.ultimoSeguimiento.registradoPor}">Canal</span>
+                                <small th:if="${#strings.length(gestion.ultimoSeguimiento.nota) <= 58}"
+                                       th:text="${gestion.ultimoSeguimiento.nota}">Nota</small>
+                                <details th:if="${#strings.length(gestion.ultimoSeguimiento.nota) > 58}"
+                                         class="morosidad-note-details">
+                                    <summary th:text="${#strings.abbreviate(gestion.ultimoSeguimiento.nota, 58)}">Ver nota completa</summary>
+                                    <p th:text="${gestion.ultimoSeguimiento.nota}">Nota completa</p>
+                                </details>
+                            </div>
+                            <span th:unless="${gestion.ultimoSeguimiento != null}" class="morosidad-no-data">Sin contacto registrado</span>
+                        </td>
+                        <td data-label="Contacto">
+                            <div th:if="${gestion.socio.telefono != null and !#strings.isEmpty(gestion.socio.telefono)}" class="morosidad-contact">
+                                <strong th:text="${gestion.socio.telefono}">Teléfono</strong>
+                                <div>
+                                    <a th:href="${'tel:' + gestion.socio.telefono}" class="operations-link"
+                                       th:aria-label="${'Llamar a ' + gestion.socio.nombreCompleto}">Llamar</a>
+                                    <a th:if="${gestion.whatsappUrl != null}" th:href="${gestion.whatsappUrl}"
+                                       target="_blank" rel="noopener" class="operations-link"
+                                       th:aria-label="${'Abrir WhatsApp de ' + gestion.socio.nombreCompleto}">WhatsApp</a>
+                                </div>
+                            </div>
+                            <span th:unless="${gestion.socio.telefono != null and !#strings.isEmpty(gestion.socio.telefono)}" class="morosidad-no-data">Sin teléfono</span>
+                        </td>
+                        <td data-label="Acciones">
+                            <div class="morosidad-actions">
+                                <a th:href="@{/cobrar(socioId=${gestion.socio.id})}" class="btn btn-gold-action btn-sm"
+                                   th:aria-label="${'Cobrar a ' + gestion.socio.nombreCompleto}">Cobrar</a>
+                                <a th:href="@{/socios/ver/{id}(id=${gestion.socio.id})}" class="btn btn-outline-gold-soft btn-sm"
+                                   th:aria-label="${'Ver ficha de ' + gestion.socio.nombreCompleto}">Ficha</a>
+                                <button type="button" class="btn btn-outline-gold-soft btn-sm"
+                                        data-bs-toggle="modal" data-bs-target="#seguimientoModal"
+                                        th:attr="data-socio-id=${gestion.socio.id},data-socio-nombre=${gestion.socio.nombreCompleto},aria-label=${'Registrar contacto con ' + gestion.socio.nombreCompleto}">
+                                    Registrar contacto
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="premium-pagination-bar" th:if="${totalElementos > 0}">
+                <span th:text="${'Mostrando ' + (primerElemento + 1) + '–' + (primerElemento + #lists.size(gestiones)) + ' de ' + totalElementos}">Resultados</span>
+                <nav class="premium-pagination" aria-label="Páginas de morosidad" th:if="${totalPaginas > 1}">
+                    <a th:if="${paginaActual > 0}"
+                       th:href="@{/morosidad(filtro=${filtroSeleccionado},buscar=${buscar},page=${paginaActual - 1})}">Anterior</a>
+                    <span th:unless="${paginaActual > 0}" class="disabled" aria-disabled="true">Anterior</span>
+                    <strong th:text="${(paginaActual + 1) + ' / ' + totalPaginas}">1 / 1</strong>
+                    <a th:if="${paginaActual + 1 < totalPaginas}"
+                       th:href="@{/morosidad(filtro=${filtroSeleccionado},buscar=${buscar},page=${paginaActual + 1})}">Siguiente</a>
+                    <span th:unless="${paginaActual + 1 < totalPaginas}" class="disabled" aria-disabled="true">Siguiente</span>
+                </nav>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div class="modal fade" id="seguimientoModal" tabindex="-1" aria-labelledby="seguimientoModalTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content premium-modal-content">
+            <div class="modal-header premium-modal-header">
+                <div>
+                    <p class="topbar-label mb-1">Seguimiento de cobro</p>
+                    <h2 class="modal-title fs-5" id="seguimientoModalTitulo">Registrar contacto</h2>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="seguimientoForm" th:action="@{/morosidad/0/seguimientos}" method="post">
+                <input type="hidden" name="filtro" th:value="${filtroSeleccionado}">
+                <input type="hidden" name="buscar" th:value="${buscar}">
+                <input type="hidden" name="page" th:value="${paginaActual}">
+                <div class="modal-body premium-modal-body">
+                    <p class="premium-help-text">Socio: <strong id="seguimientoSocioNombre">-</strong></p>
+                    <div class="mb-3">
+                        <label for="seguimientoCanal" class="form-label premium-label">Canal</label>
+                        <select id="seguimientoCanal" name="canal" class="form-select premium-input premium-select" required>
+                            <option value="">Seleccioná cómo se realizó el contacto</option>
+                            <option th:each="canal : ${canales}" th:value="${canal.name()}" th:text="${canal.descripcion}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="seguimientoNota" class="form-label premium-label">Resultado o compromiso</label>
+                        <textarea id="seguimientoNota" name="nota" class="form-control premium-input" rows="4"
+                                  minlength="2" maxlength="500" required
+                                  placeholder="Ej: Se comprometió a pagar el viernes."></textarea>
+                        <small class="premium-help-text">Solo registrá información útil para el próximo contacto.</small>
+                    </div>
+                </div>
+                <div class="modal-footer premium-modal-footer">
+                    <button type="button" class="btn btn-outline-gold-soft" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-gold-action">Guardar seguimiento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/morosidad.js}"></script>
+</body>
+</html>

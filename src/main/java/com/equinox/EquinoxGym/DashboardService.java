@@ -17,15 +17,18 @@ public class DashboardService {
     private final CuotaRepository cuotaRepository;
     private final PagoRepository pagoRepository;
     private final SocioService socioService;
+    private final MorosidadService morosidadService;
 
     public DashboardService(SocioRepository socioRepository,
                             CuotaRepository cuotaRepository,
                             PagoRepository pagoRepository,
-                            SocioService socioService) {
+                            SocioService socioService,
+                            MorosidadService morosidadService) {
         this.socioRepository = socioRepository;
         this.cuotaRepository = cuotaRepository;
         this.pagoRepository = pagoRepository;
         this.socioService = socioService;
+        this.morosidadService = morosidadService;
     }
 
     public DashboardDTO obtenerResumen() {
@@ -45,7 +48,6 @@ public class DashboardService {
 
         long totalSocios = socioRepository.count();
         long sociosActivos = socioRepository.countByEstado(EstadoSocio.ACTIVO);
-        long sociosMorosos = socioRepository.countByEstado(EstadoSocio.MOROSO);
         long sociosInactivos = socioRepository.countByEstado(EstadoSocio.INACTIVO);
 
         long cuotasVencidas = cuotaRepository.countByEstado(EstadoCuota.VENCIDA);
@@ -61,10 +63,16 @@ public class DashboardService {
             recaudadoHoy = BigDecimal.ZERO;
         }
 
-        List<Cuota> cuotasVencidasPrioritarias = cuotaRepository
-                .findTop6ByFechaPagoIsNullAndFechaVencimientoBeforeOrderByFechaVencimientoAsc(hoy);
-        List<Cuota> cuotasProximas = cuotaRepository
-                .findTop6ByFechaPagoIsNullAndFechaVencimientoBetweenOrderByFechaVencimientoAsc(hoy, finProximos);
+        MorosidadResumenDTO mesaOperativa = morosidadService.obtenerResumen("TODOS", "");
+        List<GestionMorosidadDTO> morosidadPrioritaria = mesaOperativa.getGestiones().stream()
+                .filter(gestion -> gestion.getDiasAtraso() > 0)
+                .limit(6)
+                .toList();
+        List<GestionMorosidadDTO> renovacionesProximas = mesaOperativa.getGestiones().stream()
+                .filter(gestion -> "HOY".equals(gestion.getCategoria())
+                        || "PROXIMAS".equals(gestion.getCategoria()))
+                .limit(6)
+                .toList();
         long vencenProximos = cuotaRepository
                 .countByFechaPagoIsNullAndFechaVencimientoBetween(hoy, finProximos);
         long pagosHoy = pagoRepository.countByFechaPagoAndAnuladoFalse(hoy);
@@ -91,7 +99,7 @@ public class DashboardService {
         DashboardDTO dto = new DashboardDTO();
         dto.setTotalSocios(totalSocios);
         dto.setSociosActivos(sociosActivos);
-        dto.setSociosMorosos(sociosMorosos);
+        dto.setSociosMorosos(mesaOperativa.getSociosMorosos());
         dto.setSociosInactivos(sociosInactivos);
         dto.setCuotasVencidas(cuotasVencidas);
         dto.setCuotasPagadasMes(cuotasPagadasMes);
@@ -101,8 +109,8 @@ public class DashboardService {
         dto.setVencenProximos(vencenProximos);
         dto.setCumpleaniosHoy(cumpleaniosHoy);
         dto.setCumpleaniosProximos(cumpleaniosProximos);
-        dto.setCuotasVencidasPrioritarias(cuotasVencidasPrioritarias);
-        dto.setCuotasProximas(cuotasProximas);
+        dto.setMorosidadPrioritaria(morosidadPrioritaria);
+        dto.setRenovacionesProximas(renovacionesProximas);
         dto.setUltimosPagosHoy(ultimosPagosHoy);
 
         return dto;

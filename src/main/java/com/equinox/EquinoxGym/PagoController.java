@@ -80,21 +80,38 @@ public class PagoController {
                               Model model) {
 
         if (cuotaId == null) {
-            agregarErrorPago(model, pago, "Debe seleccionar una cuota.");
+            agregarErrorPago(model, pago, cuotaId, "Debe seleccionar una cuota.");
             return "nuevo-pago";
         }
 
         try {
-            cobroService.registrarPagoPorId(cuotaId, pago.getMonto(), pago.getMedioPago());
+            Pago pagoRegistrado = cobroService.registrarPagoPorId(cuotaId, pago.getMonto(), pago.getMedioPago());
+            return "redirect:/pagos/" + pagoRegistrado.getId() + "/comprobante";
+        } catch (CajaCerradaException e) {
+            agregarErrorPago(model, pago, cuotaId, e.getMessage());
+            return "nuevo-pago";
         } catch (IllegalStateException e) {
-            agregarErrorPago(model, pago, "Esta cuota ya fue pagada. No se puede registrar dos veces.");
+            agregarErrorPago(model, pago, cuotaId, e.getMessage());
             return "nuevo-pago";
         } catch (IllegalArgumentException e) {
-            agregarErrorPago(model, pago, e.getMessage());
+            agregarErrorPago(model, pago, cuotaId, e.getMessage());
             return "nuevo-pago";
         }
+    }
 
-        return "redirect:/pagos";
+    @GetMapping("/pagos/{id}/comprobante")
+    public String verComprobante(@PathVariable Long id,
+                                 @RequestParam(name = "origenSocio", required = false) Long origenSocio,
+                                 Model model) {
+        Pago pago = pagoRepository.findById(id).orElse(null);
+        if (pago == null) {
+            return "redirect:/pagos";
+        }
+
+        model.addAttribute("pago", pago);
+        model.addAttribute("socio", pago.getCuota() != null ? pago.getCuota().getSocio() : null);
+        model.addAttribute("origenSocio", origenSocio);
+        return "comprobante-pago";
     }
 
     @PostMapping("/pagos/{id}/anular")
@@ -110,12 +127,13 @@ public class PagoController {
         return "redirect:/pagos";
     }
 
-    private void agregarErrorPago(Model model, Pago pago, String mensaje) {
+    private void agregarErrorPago(Model model, Pago pago, Long cuotaId, String mensaje) {
         List<Cuota> cuotasImpagas = cuotaRepository.findByFechaPagoIsNullOrderByFechaVencimientoAsc();
         guardarCuotasConEstadoModificado(cuotasImpagas);
 
         model.addAttribute("pago", pago);
         model.addAttribute("cuotasPendientes", cuotasImpagas);
+        model.addAttribute("cuotaIdSeleccionada", cuotaId);
         model.addAttribute("error", mensaje);
     }
 

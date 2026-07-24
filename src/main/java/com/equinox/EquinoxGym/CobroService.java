@@ -22,17 +22,23 @@ public class CobroService {
     private final PagoRepository pagoRepository;
     private final CuotaService cuotaService;
     private final SocioService socioService;
+    private final CajaService cajaService;
+    private final AuditoriaService auditoriaService;
 
     public CobroService(SocioRepository socioRepository,
                         CuotaRepository cuotaRepository,
                         PagoRepository pagoRepository,
                         CuotaService cuotaService,
-                        SocioService socioService) {
+                        SocioService socioService,
+                        CajaService cajaService,
+                        AuditoriaService auditoriaService) {
         this.socioRepository = socioRepository;
         this.cuotaRepository = cuotaRepository;
         this.pagoRepository = pagoRepository;
         this.cuotaService = cuotaService;
         this.socioService = socioService;
+        this.cajaService = cajaService;
+        this.auditoriaService = auditoriaService;
     }
 
     public List<SocioBusquedaDTO> buscarSocios(String texto) {
@@ -117,6 +123,10 @@ public class CobroService {
                                          BigDecimal montoInicial,
                                          String medioPagoInicial) {
 
+        if (cobrarAlta) {
+            cajaService.validarCajaParaPago(medioPagoInicial, usuarioActual());
+        }
+
         Socio socio = new Socio();
         socio.setNombre(nombre);
         socio.setApellido(apellido);
@@ -131,7 +141,7 @@ public class CobroService {
 
         Socio socioGuardado = socioRepository.save(socio);
 
-        Cuota primeraCuota = asignarPlanAExistente(socioGuardado, plan, fechaInicio);
+        Cuota primeraCuota = asignarPlanAExistente(socioGuardado, plan, fechaInicio, cobrarAlta);
 
         if (cobrarAlta) {
             BigDecimal montoACobrar = montoInicial != null ? montoInicial : plan.getPrecio();
@@ -146,38 +156,52 @@ public class CobroService {
      * Devuelve la cuota creada para poder cobrarla inmediatamente si corresponde.
      */
     public Cuota asignarPlanAExistente(Socio socio, Plan plan, LocalDate fechaInicio) {
+        return asignarPlanAExistente(socio, plan, fechaInicio, true);
+    }
+
+    public Cuota asignarPlanAExistente(Socio socio,
+                                       Plan plan,
+                                       LocalDate fechaInicio,
+                                       boolean cobrarAlta) {
         validarAsignacionPlan(socio, plan);
-        Cuota primeraCuota = asignarPlanYCrearPrimeraCuota(socio, plan, fechaInicio);
+        Cuota primeraCuota = asignarPlanYCrearPrimeraCuota(socio, plan, fechaInicio, cobrarAlta);
         socioRepository.save(socio);
         return cuotaRepository.save(primeraCuota);
     }
 
-    private Cuota asignarPlanYCrearPrimeraCuota(Socio socio, Plan plan, LocalDate fechaInicio) {
+    private Cuota asignarPlanYCrearPrimeraCuota(Socio socio,
+                                                Plan plan,
+                                                LocalDate fechaInicio,
+                                                boolean cobrarAlta) {
         LocalDate inicio = (fechaInicio != null) ? fechaInicio : LocalDate.now();
+        LocalDate finPeriodo = inicio.plusMonths(plan.getDuracionMeses());
 
         socio.setPlan(plan);
         socio.setFechaInicioPlan(inicio);
-        socio.setFechaVencimientoPlan(inicio.plusMonths(plan.getDuracionMeses()));
+        socio.setFechaVencimientoPlan(finPeriodo);
 
         Cuota primeraCuota = new Cuota();
         primeraCuota.setSocio(socio);
         primeraCuota.setMonto(plan.getPrecio());
-        // La primera cuota corresponde al alta y vence en la fecha de inicio.
-        // Al cobrarla se genera la renovación al final del período contratado.
-        primeraCuota.setFechaVencimiento(inicio);
+        // Con cobro de alta, la cuota vence al iniciar y su pago genera la renovación
+        // al final del período. Sin cobro inicial, la primera cuota queda programada
+        // para el final del período y no genera morosidad desde el día del alta.
+        primeraCuota.setFechaVencimiento(cobrarAlta ? inicio : finPeriodo);
         primeraCuota.setEstado(EstadoCuota.PENDIENTE);
 
         return primeraCuota;
     }
 
-    public void registrarPagoPorId(Long cuotaId, BigDecimal monto, String medioPago) {
+    public Pago registrarPagoPorId(Long cuotaId, BigDecimal monto, String medioPago) {
         Cuota cuota = cuotaRepository.findByIdForUpdate(cuotaId)
                 .orElseThrow(() -> new IllegalArgumentException("Cuota no encontrada"));
-        registrarPago(cuota, monto, medioPago);
+        return registrarPago(cuota, monto, medioPago);
     }
 
     public Pago registrarPago(Cuota cuota, BigDecimal monto, String medioPago) {
         validarPago(cuota, monto, medioPago);
+        String usuario = usuarioActual();
+        cajaService.validarCajaParaPago(medioPago, usuario);
 
         LocalDate fechaPago = LocalDate.now();
 
@@ -187,7 +211,7 @@ public class CobroService {
         pago.setMedioPago(medioPago.trim());
         pago.setFechaPago(fechaPago);
         pago.setFechaRegistro(LocalDateTime.now());
-        pago.setRegistradoPor(usuarioActual());
+        pago.setRegistradoPor(usuario);
 
         cuota.setFechaPago(fechaPago);
         cuotaService.actualizarEstadoCuota(cuota);
@@ -204,7 +228,13 @@ public class CobroService {
             socioRepository.save(socio);
         }
 
-        return pagoRepository.save(pago);
+        Pago pagoGuardado = pagoRepository.save(pago);
+        cajaService.registrarPago(pagoGuardado, usuario);
+        String socioNombre = cuota.getSocio() == null ? "socio" : cuota.getSocio().getNombreCompleto();
+        auditoriaService.registrar(usuario, "Pago registrado",
+                "Cuota de " + socioNombre + " · $ " + pagoGuardado.getMonto()
+                        + " · " + pagoGuardado.getMedioPago());
+        return pagoGuardado;
     }
 
     public void anularPago(Long pagoId, String motivo) {
@@ -239,9 +269,12 @@ public class CobroService {
             cuotaRepository.delete(renovacion);
         }
 
+        String usuario = usuarioActual();
+        cajaService.validarCajaParaPago(pago.getMedioPago(), usuario);
+
         pago.setAnulado(true);
         pago.setFechaAnulacion(LocalDateTime.now());
-        pago.setAnuladoPor(usuarioActual());
+        pago.setAnuladoPor(usuario);
         pago.setMotivoAnulacion(motivo.trim());
 
         Cuota cuotaOriginal = pago.getCuota();
@@ -261,6 +294,14 @@ public class CobroService {
         }
 
         pagoRepository.save(pago);
+        cajaService.registrarAnulacionPago(pago, usuario);
+        String socioNombre = cuotaOriginal.getSocio() == null ? "socio" : cuotaOriginal.getSocio().getNombreCompleto();
+        auditoriaService.registrar(usuario, "Pago anulado",
+                "Cuota de " + socioNombre + " · motivo: " + motivo.trim());
+    }
+
+    public void validarCajaParaMedioPago(String medioPago) {
+        cajaService.validarCajaParaPago(medioPago, usuarioActual());
     }
 
     private void validarPago(Cuota cuota, BigDecimal monto, String medioPago) {

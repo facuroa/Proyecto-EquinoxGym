@@ -87,10 +87,14 @@ public class CuotaController {
 
         if (cuota.getSocioId() == null) {
             result.rejectValue("socioId", "error.cuota", "Debe seleccionar un socio");
+        } else if (!socioRepository.existsById(cuota.getSocioId())) {
+            result.rejectValue("socioId", "error.cuota", "El socio seleccionado ya no está disponible");
         }
 
         if (cuota.getMonto() == null) {
             result.rejectValue("monto", "error.cuota", "El monto es obligatorio");
+        } else if (cuota.getMonto().signum() <= 0) {
+            result.rejectValue("monto", "error.cuota", "El monto debe ser mayor a cero");
         }
 
         if (cuota.getFechaVencimiento() == null) {
@@ -144,10 +148,14 @@ public class CuotaController {
 
         if (cuotaForm.getSocioId() == null) {
             result.rejectValue("socioId", "error.cuota", "Debe seleccionar un socio");
+        } else if (!socioRepository.existsById(cuotaForm.getSocioId())) {
+            result.rejectValue("socioId", "error.cuota", "El socio seleccionado ya no está disponible");
         }
 
         if (cuotaForm.getMonto() == null) {
             result.rejectValue("monto", "error.cuota", "El monto es obligatorio");
+        } else if (cuotaForm.getMonto().signum() <= 0) {
+            result.rejectValue("monto", "error.cuota", "El monto debe ser mayor a cero");
         }
 
         if (cuotaForm.getFechaVencimiento() == null) {

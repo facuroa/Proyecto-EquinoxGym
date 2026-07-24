@@ -38,6 +38,7 @@ public class Socio {
 
     private LocalDate fechaInicioPlan;
     private LocalDate fechaVencimientoPlan;
+    private LocalDate fechaAlta;
 
     @OneToMany(mappedBy = "socio", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Cuota> cuotas = new ArrayList<>();
@@ -89,8 +90,18 @@ public class Socio {
     public LocalDate getFechaVencimientoPlan() { return fechaVencimientoPlan; }
     public void setFechaVencimientoPlan(LocalDate fechaVencimientoPlan) { this.fechaVencimientoPlan = fechaVencimientoPlan; }
 
+    public LocalDate getFechaAlta() { return fechaAlta; }
+    public void setFechaAlta(LocalDate fechaAlta) { this.fechaAlta = fechaAlta; }
+
     public List<Cuota> getCuotas() { return cuotas; }
     public void setCuotas(List<Cuota> cuotas) { this.cuotas = cuotas; }
+
+    @PrePersist
+    public void registrarFechaAlta() {
+        if (fechaAlta == null) {
+            fechaAlta = LocalDate.now();
+        }
+    }
 
     public String getNombreCompleto() {
         return (nombre != null ? nombre : "") + " " + (apellido != null ? apellido : "");

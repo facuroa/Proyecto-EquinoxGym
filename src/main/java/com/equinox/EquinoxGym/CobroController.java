@@ -8,24 +8,32 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Controller
 @RequestMapping("/cobrar")
 public class CobroController {
 
+    private static final Pattern DNI_VALIDO = Pattern.compile("^[0-9]{6,12}$");
+    private static final Pattern TELEFONO_VALIDO = Pattern.compile("^[+0-9()\\s-]{6,25}$");
+    private static final Pattern EMAIL_VALIDO = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+
     private final SocioRepository socioRepository;
     private final PlanRepository planRepository;
     private final CobroService cobroService;
     private final SocioService socioService;
+    private final PagoRepository pagoRepository;
 
     public CobroController(SocioRepository socioRepository,
                            PlanRepository planRepository,
                            CobroService cobroService,
-                           SocioService socioService) {
+                           SocioService socioService,
+                           PagoRepository pagoRepository) {
         this.socioRepository = socioRepository;
         this.planRepository = planRepository;
         this.cobroService = cobroService;
         this.socioService = socioService;
+        this.pagoRepository = pagoRepository;
     }
 
     /**
@@ -48,8 +56,9 @@ public class CobroController {
         if (socioId != null) {
             Socio socio = socioRepository.findById(socioId).orElse(null);
             if (socio != null) {
-                socioService.actualizarEstadoSocio(socio);
-                socioRepository.save(socio);
+                if (socioService.actualizarEstadoSocio(socio)) {
+                    socioRepository.save(socio);
+                }
 
                 model.addAttribute("socio", socio);
                 Optional<Cuota> cuotaPendiente = cobroService.obtenerCuotaPendienteMasAntigua(socio);
@@ -87,29 +96,59 @@ public class CobroController {
                              @RequestParam(required = false) String fechaNacimiento,
                              @RequestParam(value = "tieneLesiones", required = false) Boolean tieneLesiones,
                              @RequestParam(required = false) String detalleLesiones,
-                             @RequestParam Long planId,
+                             @RequestParam(required = false) Long planId,
                              @RequestParam(required = false) String fechaInicioPlan,
                              @RequestParam(value = "cobrarAlta", required = false) Boolean cobrarAlta,
                              @RequestParam(value = "montoInicial", required = false) BigDecimal montoInicial,
                              @RequestParam(value = "medioPagoInicial", required = false) String medioPagoInicial) {
 
-        if (dni == null || dni.trim().isEmpty()) {
-            return "redirect:/cobrar?altaRapida=true&error=dniObligatorio";
+        nombre = limpiar(nombre);
+        apellido = limpiar(apellido);
+        dni = normalizarDni(dni);
+        telefono = limpiar(telefono);
+        email = limpiar(email);
+        domicilioActual = limpiar(domicilioActual);
+        detalleLesiones = limpiar(detalleLesiones);
+
+        LocalDate nacimiento;
+        LocalDate inicio;
+        try {
+            nacimiento = parseFechaONull(fechaNacimiento);
+            inicio = parseFechaONull(fechaInicioPlan);
+        } catch (RuntimeException e) {
+            return "redirect:/cobrar?altaRapida=true&error=fechaInvalida";
+        }
+
+        if (nombre == null || apellido == null || dni == null) {
+            return "redirect:/cobrar?altaRapida=true&error=datosInvalidos";
+        }
+        if (nombre.length() > 80 || apellido.length() > 80
+                || !DNI_VALIDO.matcher(dni).matches()
+                || (telefono != null && !TELEFONO_VALIDO.matcher(telefono).matches())
+                || (email != null && !EMAIL_VALIDO.matcher(email).matches())
+                || (domicilioActual != null && domicilioActual.length() > 255)
+                || (nacimiento != null && nacimiento.isAfter(LocalDate.now()))
+                || (Boolean.TRUE.equals(tieneLesiones) && detalleLesiones == null)
+                || (detalleLesiones != null && detalleLesiones.length() > 1000)) {
+            return "redirect:/cobrar?altaRapida=true&error=datosInvalidos";
         }
 
         if (socioRepository.findByDni(dni).isPresent()) {
             return "redirect:/cobrar?altaRapida=true&error=dniDuplicado";
         }
 
-        Plan plan = planRepository.findById(planId)
-                .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+        if (planId == null) {
+            return "redirect:/cobrar?altaRapida=true&error=datosInvalidos";
+        }
+        Plan plan = planRepository.findById(planId).orElse(null);
+        if (plan == null || !plan.isActivo()) {
+            return "redirect:/cobrar?altaRapida=true&error=planInvalido";
+        }
 
-        LocalDate inicio = parseFechaONull(fechaInicioPlan);
         if (inicio == null) {
             inicio = LocalDate.now();
         }
 
-        LocalDate nacimiento = parseFechaONull(fechaNacimiento);
         boolean cobrarAltaMarcado = Boolean.TRUE.equals(cobrarAlta);
 
         try {
@@ -118,8 +157,18 @@ public class CobroController {
                     Boolean.TRUE.equals(tieneLesiones), detalleLesiones, plan, inicio,
                     cobrarAltaMarcado, montoInicial, medioPagoInicial);
 
+            if (cobrarAltaMarcado) {
+                Optional<Pago> pagoInicial = pagoRepository
+                        .findFirstByCuota_Socio_IdAndAnuladoFalseOrderByFechaRegistroDescIdDesc(socio.getId());
+                if (pagoInicial.isPresent()) {
+                    return "redirect:/pagos/" + pagoInicial.get().getId()
+                            + "/comprobante?origenSocio=" + socio.getId();
+                }
+            }
             String mensaje = cobrarAltaMarcado ? "pagado" : "cuotaGenerada";
             return "redirect:/cobrar?socioId=" + socio.getId() + "&mensaje=" + mensaje;
+        } catch (CajaCerradaException e) {
+            return "redirect:/cobrar?altaRapida=true&error=cajaCerrada";
         } catch (IllegalArgumentException e) {
             return "redirect:/cobrar?altaRapida=true&error=pagoInvalido";
         }
@@ -131,12 +180,18 @@ public class CobroController {
                               @RequestParam Long planId,
                               @RequestParam(required = false) String fechaInicioPlan) {
 
-        Socio socio = socioRepository.findById(socioId)
-                .orElseThrow(() -> new RuntimeException("Socio no encontrado"));
-        Plan plan = planRepository.findById(planId)
-                .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+        Socio socio = socioRepository.findById(socioId).orElse(null);
+        Plan plan = planRepository.findById(planId).orElse(null);
+        if (socio == null || plan == null || !plan.isActivo()) {
+            return "redirect:/cobrar?error=planInvalido";
+        }
 
-        LocalDate inicio = parseFechaONull(fechaInicioPlan);
+        LocalDate inicio;
+        try {
+            inicio = parseFechaONull(fechaInicioPlan);
+        } catch (RuntimeException e) {
+            return "redirect:/cobrar?socioId=" + socioId + "&error=fechaInvalida";
+        }
         if (inicio == null) {
             inicio = LocalDate.now();
         }
@@ -165,7 +220,12 @@ public class CobroController {
             return "redirect:/cobrar?socioId=" + socioId + "&error=cuotaExistente";
         }
 
-        LocalDate inicio = parseFechaONull(fechaInicioPlan);
+        LocalDate inicio;
+        try {
+            inicio = parseFechaONull(fechaInicioPlan);
+        } catch (RuntimeException e) {
+            return "redirect:/cobrar?socioId=" + socioId + "&error=fechaInvalida";
+        }
         if (inicio == null) {
             inicio = LocalDate.now();
         }
@@ -173,13 +233,18 @@ public class CobroController {
         boolean cobrarAltaMarcado = Boolean.TRUE.equals(cobrarAlta);
 
         try {
+            if (cobrarAltaMarcado) {
+                cobroService.validarCajaParaMedioPago(medioPagoInicial);
+            }
             Cuota cuotaInicial = cobroService.asignarPlanAExistente(socio, socio.getPlan(), inicio);
             if (cobrarAltaMarcado) {
                 BigDecimal montoACobrar = montoInicial != null ? montoInicial : socio.getPlan().getPrecio();
-                cobroService.registrarPago(cuotaInicial, montoACobrar, medioPagoInicial);
-                return "redirect:/cobrar?socioId=" + socioId + "&mensaje=pagado";
+                Pago pago = cobroService.registrarPago(cuotaInicial, montoACobrar, medioPagoInicial);
+                return "redirect:/pagos/" + pago.getId() + "/comprobante?origenSocio=" + socioId;
             }
             return "redirect:/cobrar?socioId=" + socioId + "&mensaje=cuotaGenerada";
+        } catch (CajaCerradaException e) {
+            return "redirect:/cobrar?socioId=" + socioId + "&error=cajaCerrada";
         } catch (IllegalArgumentException e) {
             return "redirect:/cobrar?socioId=" + socioId + "&error=pagoInvalido";
         }
@@ -192,8 +257,10 @@ public class CobroController {
                         @RequestParam BigDecimal monto,
                         @RequestParam String medioPago) {
         try {
-            cobroService.registrarPagoPorId(cuotaId, monto, medioPago);
-            return "redirect:/cobrar?socioId=" + socioId + "&mensaje=pagado";
+            Pago pago = cobroService.registrarPagoPorId(cuotaId, monto, medioPago);
+            return "redirect:/pagos/" + pago.getId() + "/comprobante?origenSocio=" + socioId;
+        } catch (CajaCerradaException e) {
+            return "redirect:/cobrar?socioId=" + socioId + "&error=cajaCerrada";
         } catch (IllegalStateException e) {
             return "redirect:/cobrar?socioId=" + socioId + "&error=cuotaYaPagada";
         } catch (IllegalArgumentException e) {
@@ -206,5 +273,16 @@ public class CobroController {
             return null;
         }
         return LocalDate.parse(fecha);
+    }
+
+    private String normalizarDni(String dni) {
+        String limpio = limpiar(dni);
+        return limpio == null ? null : limpio.replaceAll("[.\\s-]", "");
+    }
+
+    private String limpiar(String valor) {
+        if (valor == null) return null;
+        String limpio = valor.trim();
+        return limpio.isEmpty() ? null : limpio;
     }
 }

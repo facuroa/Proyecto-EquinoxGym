@@ -5,9 +5,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.regex.Pattern;
+
 @Controller
 @RequestMapping("/usuarios")
 public class UsuarioController {
+
+    private static final Pattern USERNAME_VALIDO = Pattern.compile("^[A-Za-z0-9._-]{3,40}$");
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
@@ -46,9 +50,16 @@ public class UsuarioController {
                           Model model) {
 
         boolean esNuevo = (usuario.getId() == null);
+        if (usuario.getUsername() != null) {
+            usuario.setUsername(usuario.getUsername().trim());
+        }
 
         if (usuario.getUsername() == null || usuario.getUsername().trim().isEmpty()) {
             return volverConError(model, usuario, "El nombre de usuario es obligatorio.");
+        }
+        if (!USERNAME_VALIDO.matcher(usuario.getUsername()).matches()) {
+            return volverConError(model, usuario,
+                    "El usuario debe tener entre 3 y 40 caracteres y usar solo letras, números, punto, guion o guion bajo.");
         }
         if (usuario.getRol() == null) {
             return volverConError(model, usuario, "Debe seleccionar un rol.");
@@ -56,10 +67,14 @@ public class UsuarioController {
         if (esNuevo && (passwordNuevo == null || passwordNuevo.trim().isEmpty())) {
             return volverConError(model, usuario, "La contraseña es obligatoria para nuevos usuarios.");
         }
+        if (passwordNuevo != null && !passwordNuevo.isBlank()
+                && (passwordNuevo.length() < 8 || passwordNuevo.length() > 72)) {
+            return volverConError(model, usuario, "La contraseña debe tener entre 8 y 72 caracteres.");
+        }
 
         boolean usernameDuplicado = esNuevo
-                ? usuarioRepository.existsByUsername(usuario.getUsername())
-                : usuarioRepository.existsByUsernameAndIdNot(usuario.getUsername(), usuario.getId());
+                ? usuarioRepository.existsByUsernameIgnoreCase(usuario.getUsername())
+                : usuarioRepository.existsByUsernameIgnoreCaseAndIdNot(usuario.getUsername(), usuario.getId());
 
         if (usernameDuplicado) {
             return volverConError(model, usuario, "Ya existe un usuario con ese nombre.");

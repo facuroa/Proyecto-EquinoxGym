@@ -32,7 +32,7 @@ class CobroServiceIntegrationTests {
     private PagoRepository pagoRepository;
 
     @Test
-    void altaConPlanGeneraUnaCuotaConElVencimientoCorrecto() {
+    void altaSinCobroProgramaLaPrimeraCuotaAlFinalDelPeriodo() {
         Plan plan = guardarPlan("Mensual alta", 1, "25000");
         LocalDate inicio = LocalDate.now().minusDays(3);
 
@@ -41,7 +41,7 @@ class CobroServiceIntegrationTests {
 
         List<Cuota> cuotas = cuotasDe(socio);
         assertThat(cuotas).hasSize(1);
-        assertThat(cuotas.get(0).getFechaVencimiento()).isEqualTo(inicio);
+        assertThat(cuotas.get(0).getFechaVencimiento()).isEqualTo(inicio.plusMonths(1));
         assertThat(cuotas.get(0).getEstado()).isEqualTo(EstadoCuota.PENDIENTE);
     }
 

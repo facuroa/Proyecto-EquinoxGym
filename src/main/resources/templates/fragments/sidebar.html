@@ -5,10 +5,9 @@
 <aside th:fragment="sidebar(activeLink)" class="sidebar">
     <div>
         <a th:href="@{/dashboard}" class="brand-box">
-            <img th:src="@{/img/icono.png}" alt="Logo Equinox" class="brand-logo">
+            <img th:src="@{/branding/logo}" th:alt="${'Logo ' + gymName}" class="brand-logo">
             <div class="brand-texts">
-                <span class="brand-title">EQUINOX</span>
-                <span class="brand-subtitle">GYM SYSTEM</span>
+                <span class="brand-title" th:text="${gymName}">GYM SYSTEM</span>
             </div>
         </a>
 
@@ -32,6 +31,10 @@
                th:classappend="${activeLink == 'socios'} ? ' active'"
                class="sidebar-link">Socios</a>
 
+            <a th:href="@{/morosidad}"
+               th:classappend="${activeLink == 'morosidad'} ? ' active'"
+               class="sidebar-link">Morosidad</a>
+
             <a th:href="@{/cuotas}"
                th:classappend="${activeLink == 'cuotas'} ? ' active'"
                class="sidebar-link">Cuotas</a>
@@ -39,6 +42,20 @@
             <a th:href="@{/pagos}"
                th:classappend="${activeLink == 'pagos'} ? ' active'"
                class="sidebar-link">Pagos</a>
+
+            <a th:href="@{/caja}"
+               th:classappend="${activeLink == 'caja'} ? ' active'"
+               class="sidebar-link">Caja</a>
+
+            <a sec:authorize="hasRole('ADMIN')"
+               th:href="@{/reportes}"
+               th:classappend="${activeLink == 'reportes'} ? ' active'"
+               class="sidebar-link">Reportes</a>
+
+            <a sec:authorize="hasRole('ADMIN')"
+               th:href="@{/auditoria}"
+               th:classappend="${activeLink == 'auditoria'} ? ' active'"
+               class="sidebar-link">Auditoría</a>
 
             <a sec:authorize="hasRole('ADMIN')"
                th:href="@{/planes}"

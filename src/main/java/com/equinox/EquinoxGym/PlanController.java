@@ -36,9 +36,17 @@ public class PlanController {
 
     @PostMapping("/guardar")
     public String guardar(@ModelAttribute Plan plan, Model model) {
+        if (plan.getNombre() != null) {
+            plan.setNombre(plan.getNombre().trim());
+        }
         if (plan.getNombre() == null || plan.getNombre().trim().isEmpty()) {
             model.addAttribute("plan", plan);
             model.addAttribute("error", "El nombre es obligatorio.");
+            return "nuevo-plan";
+        }
+        if (plan.getNombre().length() > 80) {
+            model.addAttribute("plan", plan);
+            model.addAttribute("error", "El nombre no puede superar los 80 caracteres.");
             return "nuevo-plan";
         }
         if (plan.getPrecio() == null || plan.getPrecio().doubleValue() <= 0) {
@@ -49,6 +57,11 @@ public class PlanController {
         if (plan.getDuracionMeses() <= 0) {
             model.addAttribute("plan", plan);
             model.addAttribute("error", "La duración debe ser al menos 1 mes.");
+            return "nuevo-plan";
+        }
+        if (plan.getDuracionMeses() > 60) {
+            model.addAttribute("plan", plan);
+            model.addAttribute("error", "La duración no puede superar los 60 meses.");
             return "nuevo-plan";
         }
 
