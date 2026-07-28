@@ -1,0 +1,10 @@
+[Unit]
+Description=Ejecución diaria del backup de Equinox Gym
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+Unit=equinox-backup.service
+
+[Install]
+WantedBy=timers.target

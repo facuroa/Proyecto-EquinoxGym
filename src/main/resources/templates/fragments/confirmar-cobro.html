@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="modal" class="modal fade" id="confirmarCobroModal" tabindex="-1"
+     aria-labelledby="confirmarCobroTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content premium-modal-content payment-confirm-modal">
+            <div class="modal-header premium-modal-header">
+                <div>
+                    <p class="topbar-label mb-1">Control antes de guardar</p>
+                    <h2 class="modal-title fs-5" id="confirmarCobroTitulo">Confirmar cobro</h2>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="payment-confirm-intro">Revisá los datos. Al confirmar se registrará el movimiento y se emitirá el comprobante.</p>
+                <dl class="payment-confirm-summary">
+                    <div>
+                        <dt>Socio</dt>
+                        <dd id="confirmarCobroSocio">-</dd>
+                    </div>
+                    <div>
+                        <dt>Vencimiento</dt>
+                        <dd id="confirmarCobroVencimiento">-</dd>
+                    </div>
+                    <div>
+                        <dt>Medio de pago</dt>
+                        <dd id="confirmarCobroMedio">-</dd>
+                    </div>
+                    <div class="payment-confirm-total">
+                        <dt>Total a cobrar</dt>
+                        <dd id="confirmarCobroMonto">-</dd>
+                    </div>
+                </dl>
+                <div class="payment-confirm-warning">Confirmá solo después de verificar el monto y el medio de pago.</div>
+            </div>
+            <div class="modal-footer premium-modal-footer">
+                <button type="button" class="btn btn-outline-gold-soft" data-bs-dismiss="modal">Volver y revisar</button>
+                <button type="button" class="btn btn-gold-action" id="confirmarCobroAccion">Confirmar y cobrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

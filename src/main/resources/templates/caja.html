@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caja - Gym System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body class="dashboard-body">
+<div class="dashboard-wrapper">
+    <aside th:replace="~{fragments/sidebar :: sidebar('caja')}"></aside>
+
+    <main class="main-content">
+        <div th:replace="~{fragments/toast :: toast('success', ${mensaje})}"></div>
+        <div th:replace="~{fragments/toast :: toast('error', ${error})}"></div>
+
+        <header class="topbar cash-topbar">
+            <div>
+                <p class="topbar-label">Control diario de efectivo</p>
+                <h1 class="topbar-title">Caja</h1>
+                <p class="topbar-subtitle">Apertura, movimientos y cierre de jornada.</p>
+            </div>
+            <div class="topbar-status" th:classappend="${resumen.cajaAbierta} ? ' cash-status-open'">
+                <span>Estado de tu caja</span>
+                <strong th:text="${resumen.cajaAbierta ? 'ABIERTA' : 'CERRADA'}">CERRADA</strong>
+            </div>
+        </header>
+
+        <section th:unless="${resumen.cajaAbierta}" class="cash-opening-layout">
+            <article class="cash-opening-card">
+                <div class="cash-opening-copy">
+                    <span class="hero-badge">Caja cerrada</span>
+                    <h2>Apertura de caja</h2>
+                    <p>Ingresá el efectivo disponible al inicio de la jornada.</p>
+                </div>
+                <form th:action="@{/caja/abrir}" method="post" class="cash-opening-form">
+                    <div>
+                        <label for="montoInicial" class="form-label premium-label">Fondo inicial en efectivo</label>
+                        <div class="cash-money-input">
+                            <span>$</span>
+                            <input id="montoInicial" name="montoInicial" type="number" min="0" max="999999999.99"
+                                   step="0.01" value="0.00" class="form-control premium-input" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="observacionesApertura" class="form-label premium-label">Observación <span>opcional</span></label>
+                        <textarea id="observacionesApertura" name="observaciones" rows="3" maxlength="500"
+                                  class="form-control premium-input" placeholder="Ej: cambio recibido del turno anterior"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-gold-action w-100">Abrir caja</button>
+                </form>
+            </article>
+        </section>
+
+        <div th:if="${resumen.cajaAbierta}">
+            <section class="cash-session-strip">
+                <div>
+                    <span>Caja de</span>
+                    <strong th:text="${resumen.cajaActual.usuarioApertura}">usuario</strong>
+                </div>
+                <div>
+                    <span>Abierta</span>
+                    <strong th:text="${#temporals.format(resumen.cajaActual.fechaApertura, 'dd/MM/yyyy HH:mm')}">17/07/2026 08:00</strong>
+                </div>
+                <div th:if="${resumen.cajaActual.observacionesApertura}">
+                    <span>Nota inicial</span>
+                    <strong th:text="${resumen.cajaActual.observacionesApertura}">Sin observaciones</strong>
+                </div>
+            </section>
+
+            <section class="cash-metrics" aria-label="Resumen de caja abierta">
+                <article class="metric-card cash-metric-card">
+                    <span class="metric-label">Fondo inicial</span>
+                    <strong th:text="${'$ ' + #numbers.formatDecimal(resumen.cajaActual.montoInicial, 1, 'POINT', 2, 'COMMA')}">$ 0,00</strong>
+                </article>
+                <article class="metric-card cash-metric-card">
+                    <span class="metric-label">Cobros en efectivo</span>
+                    <strong class="cash-positive" th:text="${'$ ' + #numbers.formatDecimal(resumen.cobrosEfectivo, 1, 'POINT', 2, 'COMMA')}">$ 0,00</strong>
+                </article>
+                <article class="metric-card cash-metric-card cash-noncash-card">
+                    <span class="metric-label">Transferencias</span>
+                    <strong th:text="${'$ ' + #numbers.formatDecimal(resumen.transferencias, 1, 'POINT', 2, 'COMMA')}">$ 0,00</strong>
+                </article>
+                <article class="metric-card cash-metric-card cash-noncash-card">
+                    <span class="metric-label">Tarjetas</span>
+                    <strong th:text="${'$ ' + #numbers.formatDecimal(resumen.tarjetas, 1, 'POINT', 2, 'COMMA')}">$ 0,00</strong>
+                </article>
+                <article th:if="${resumen.otrosMedios.signum() != 0}" class="metric-card cash-metric-card cash-noncash-card">
+                    <span class="metric-label">Otros medios</span>
+                    <strong th:text="${'$ ' + #numbers.formatDecimal(resumen.otrosMedios, 1, 'POINT', 2, 'COMMA')}">$ 0,00</strong>
+                </article>
+                <article class="metric-card cash-metric-card">
+                    <span class="metric-label">Otros ingresos</span>
+                    <strong class="cash-positive" th:text="${'$ ' + #numbers.formatDecimal(resumen.ingresosManuales, 1, 'POINT', 2, 'COMMA')}">$ 0,00</strong>
+                </article>
+                <article class="metric-card cash-metric-card">
+                    <span class="metric-label">Egresos</span>
+                    <strong class="cash-negative" th:text="${'$ ' + #numbers.formatDecimal(resumen.egresos, 1, 'POINT', 2, 'COMMA')}">$ 0,00</strong>
+                </article>
+                <article class="metric-card cash-metric-card cash-expected-card">
+                    <span class="metric-label">Efectivo esperado</span>
+                    <strong th:text="${'$ ' + #numbers.formatDecimal(resumen.saldoEsperado, 1, 'POINT', 2, 'COMMA')}">$ 0,00</strong>
+                </article>
+            </section>
+
+            <section class="cash-operation-grid">
+                <article class="cash-panel">
+                    <header class="cash-panel-header">
+                        <div>
+                            <span class="premium-label">Ajustes de la jornada</span>
+                            <h2>Registrar movimiento</h2>
+                        </div>
+                    </header>
+                    <form th:action="@{/caja/movimientos}" method="post" class="cash-movement-form">
+                        <div class="payment-filter-field">
+                            <label for="tipoMovimiento">Tipo</label>
+                            <select id="tipoMovimiento" name="tipo" class="form-select premium-input premium-filter-select" required>
+                                <option value="INGRESO">Ingreso</option>
+                                <option value="EGRESO">Egreso</option>
+                            </select>
+                        </div>
+                        <div class="payment-filter-field">
+                            <label for="montoMovimiento">Monto</label>
+                            <div class="cash-money-input">
+                                <span>$</span>
+                                <input id="montoMovimiento" name="monto" type="number" min="0.01" max="999999999.99"
+                                       step="0.01" class="form-control premium-input" required>
+                            </div>
+                        </div>
+                        <div class="payment-filter-field cash-concept-field">
+                            <label for="conceptoMovimiento">Concepto</label>
+                            <input id="conceptoMovimiento" name="concepto" type="text" minlength="3" maxlength="250"
+                                   class="form-control premium-input" placeholder="Ej: compra de artículos de limpieza" required>
+                        </div>
+                        <button type="submit" class="btn btn-gold-search cash-movement-submit">Guardar movimiento</button>
+                    </form>
+                </article>
+
+                <article class="cash-panel cash-closing-panel">
+                    <header class="cash-panel-header">
+                        <div>
+                            <span class="premium-label">Arqueo de caja</span>
+                            <h2>Cerrar jornada</h2>
+                        </div>
+                    </header>
+                    <div class="cash-expected-summary">
+                        <span>El sistema espera</span>
+                        <strong th:text="${'$ ' + #numbers.formatDecimal(resumen.saldoEsperado, 1, 'POINT', 2, 'COMMA')}">$ 0,00</strong>
+                    </div>
+                    <form th:action="@{/caja/cerrar}" method="post" class="cash-closing-form"
+                          th:attr="data-expected=${resumen.saldoEsperado}">
+                        <input type="hidden" name="cajaId" th:value="${resumen.cajaActual.id}">
+                        <div>
+                            <label for="montoDeclarado" class="form-label premium-label">Efectivo contado</label>
+                            <div class="cash-money-input">
+                                <span>$</span>
+                                <input id="montoDeclarado" name="montoDeclarado" type="number" min="0" max="999999999.99"
+                                       step="0.01" class="form-control premium-input" required>
+                            </div>
+                        </div>
+                        <div class="cash-live-difference" aria-live="polite">
+                            <span>Diferencia estimada</span>
+                            <strong id="diferenciaEstimada">Ingresá el efectivo contado</strong>
+                        </div>
+                        <div>
+                            <label for="observacionesCierre" class="form-label premium-label">Observación <span>opcional</span></label>
+                            <textarea id="observacionesCierre" name="observaciones" rows="2" maxlength="500"
+                                      class="form-control premium-input" placeholder="Detalle útil si existe una diferencia"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-outline-gold-soft w-100">Cerrar y guardar arqueo</button>
+                    </form>
+                </article>
+            </section>
+
+            <section class="cash-panel cash-movements-panel">
+                <header class="cash-panel-header">
+                    <div>
+                        <span class="premium-label">Auditoría de la jornada</span>
+                        <h2>Movimientos</h2>
+                    </div>
+                    <span th:text="${#lists.size(resumen.movimientos) + ' registros'}">0 registros</span>
+                </header>
+                <div th:if="${#lists.isEmpty(resumen.movimientos)}" class="cash-empty-state">
+                    Todavía no hay movimientos en esta caja.
+                </div>
+                <div th:unless="${#lists.isEmpty(resumen.movimientos)}" class="table-responsive">
+                    <table class="table premium-table cash-table align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Concepto</th>
+                            <th>Origen</th>
+                            <th>Responsable</th>
+                            <th class="text-end">Monto</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="movimiento : ${resumen.movimientos}">
+                            <td th:text="${#temporals.format(movimiento.fechaRegistro, 'HH:mm')}">10:30</td>
+                            <td>
+                                <strong th:text="${movimiento.concepto}">Concepto</strong>
+                                <a th:if="${movimiento.pago}" th:href="@{/pagos/{id}/comprobante(id=${movimiento.pago.id})}"
+                                   class="cash-receipt-link" th:text="${movimiento.pago.numeroComprobante}">EQX-00000001</a>
+                            </td>
+                            <td><span class="status-badge status-badge-info" th:text="${movimiento.origen.descripcion}">Manual</span></td>
+                            <td th:text="${movimiento.registradoPor}">usuario</td>
+                            <td class="text-end">
+                                <strong th:class="${movimiento.tipo.name() == 'INGRESO' ? 'cash-positive' : 'cash-negative'}"
+                                        th:text="${(movimiento.tipo.name() == 'INGRESO' ? '+ $ ' : '- $ ') + #numbers.formatDecimal(movimiento.monto, 1, 'POINT', 2, 'COMMA')}">+ $ 0,00</strong>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <section class="cash-panel cash-history-panel" th:if="${!#lists.isEmpty(resumen.historial)}">
+            <header class="cash-panel-header">
+                <div>
+                    <span class="premium-label">Cierres anteriores</span>
+                    <h2 th:text="${resumen.administrador ? 'Historial general' : 'Mi historial'}">Mi historial</h2>
+                </div>
+                <span>Últimos 20 cierres</span>
+            </header>
+            <div class="table-responsive">
+                <table class="table premium-table cash-table align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th>Jornada</th>
+                        <th>Usuario</th>
+                        <th class="text-end">Esperado</th>
+                        <th class="text-end">Contado</th>
+                        <th class="text-end">Diferencia</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="caja : ${resumen.historial}">
+                        <td>
+                            <strong th:text="${#temporals.format(caja.fechaApertura, 'dd/MM/yyyy')}">17/07/2026</strong>
+                            <small th:text="${#temporals.format(caja.fechaApertura, 'HH:mm') + ' — ' + #temporals.format(caja.fechaCierre, 'HH:mm')}">08:00 — 22:00</small>
+                        </td>
+                        <td th:text="${caja.usuarioApertura}">usuario</td>
+                        <td class="text-end" th:text="${'$ ' + #numbers.formatDecimal(caja.montoEsperadoCierre, 1, 'POINT', 2, 'COMMA')}">$ 0,00</td>
+                        <td class="text-end" th:text="${'$ ' + #numbers.formatDecimal(caja.montoDeclaradoCierre, 1, 'POINT', 2, 'COMMA')}">$ 0,00</td>
+                        <td class="text-end">
+                            <strong th:classappend="${caja.diferenciaCierre.signum() == 0 ? ' cash-balanced' : (caja.diferenciaCierre.signum() > 0 ? ' cash-positive' : ' cash-negative')}"
+                                    th:text="${(caja.diferenciaCierre.signum() > 0 ? '+ $ ' : '$ ') + #numbers.formatDecimal(caja.diferenciaCierre, 1, 'POINT', 2, 'COMMA')}">$ 0,00</strong>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script>
+    const closingForm = document.querySelector('.cash-closing-form');
+    if (closingForm) {
+        const countedInput = document.getElementById('montoDeclarado');
+        const differenceOutput = document.getElementById('diferenciaEstimada');
+        const expected = Number(closingForm.dataset.expected || 0);
+        const money = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
+        countedInput.addEventListener('input', function () {
+            if (this.value === '') {
+                differenceOutput.textContent = 'Ingresá el efectivo contado';
+                differenceOutput.className = '';
+                return;
+            }
+            const difference = Number(this.value) - expected;
+            differenceOutput.textContent = money.format(difference);
+            differenceOutput.className = difference === 0 ? 'cash-balanced'
+                : (difference > 0 ? 'cash-positive' : 'cash-negative');
+        });
+    }
+</script>
+</body>
+</html>

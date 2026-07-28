@@ -1,0 +1,17 @@
+[Unit]
+Description=Equinox Gym local
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=equinox
+Group=equinox
+WorkingDirectory=/opt/equinox-gym
+EnvironmentFile=/etc/equinox-gym/equinox.env
+ExecStart=/usr/bin/java -jar /opt/equinox-gym/app/EquinoxGym.jar
+Restart=on-failure
+RestartSec=10
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target

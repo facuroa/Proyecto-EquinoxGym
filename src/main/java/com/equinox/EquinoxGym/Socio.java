@@ -18,7 +18,13 @@ public class Socio {
     private String dni;
     private String telefono;
     private String email;
+    private String domicilioActual;
     private LocalDate fechaNacimiento;
+
+    private boolean tieneLesiones;
+
+    @Column(length = 1000)
+    private String detalleLesiones;
 
     @Column(length = 1000)
     private String observaciones;
@@ -32,6 +38,7 @@ public class Socio {
 
     private LocalDate fechaInicioPlan;
     private LocalDate fechaVencimientoPlan;
+    private LocalDate fechaAlta;
 
     @OneToMany(mappedBy = "socio", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Cuota> cuotas = new ArrayList<>();
@@ -56,8 +63,17 @@ public class Socio {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
+    public String getDomicilioActual() { return domicilioActual; }
+    public void setDomicilioActual(String domicilioActual) { this.domicilioActual = domicilioActual; }
+
     public LocalDate getFechaNacimiento() { return fechaNacimiento; }
     public void setFechaNacimiento(LocalDate fechaNacimiento) { this.fechaNacimiento = fechaNacimiento; }
+
+    public boolean isTieneLesiones() { return tieneLesiones; }
+    public void setTieneLesiones(boolean tieneLesiones) { this.tieneLesiones = tieneLesiones; }
+
+    public String getDetalleLesiones() { return detalleLesiones; }
+    public void setDetalleLesiones(String detalleLesiones) { this.detalleLesiones = detalleLesiones; }
 
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
@@ -74,8 +90,18 @@ public class Socio {
     public LocalDate getFechaVencimientoPlan() { return fechaVencimientoPlan; }
     public void setFechaVencimientoPlan(LocalDate fechaVencimientoPlan) { this.fechaVencimientoPlan = fechaVencimientoPlan; }
 
+    public LocalDate getFechaAlta() { return fechaAlta; }
+    public void setFechaAlta(LocalDate fechaAlta) { this.fechaAlta = fechaAlta; }
+
     public List<Cuota> getCuotas() { return cuotas; }
     public void setCuotas(List<Cuota> cuotas) { this.cuotas = cuotas; }
+
+    @PrePersist
+    public void registrarFechaAlta() {
+        if (fechaAlta == null) {
+            fechaAlta = LocalDate.now();
+        }
+    }
 
     public String getNombreCompleto() {
         return (nombre != null ? nombre : "") + " " + (apellido != null ? apellido : "");

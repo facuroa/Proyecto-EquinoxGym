@@ -4,10 +4,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Controller
 public class CuotaController {
@@ -31,31 +34,36 @@ public class CuotaController {
     }
 
     @GetMapping("/cuotas")
-    public String listarCuotas(@RequestParam(name = "estado", required = false) String estado,
+    public String listarCuotas(@RequestParam(name = "estado", defaultValue = "TODAS") String estado,
+                               @RequestParam(name = "buscar", defaultValue = "") String buscar,
+                               @RequestParam(name = "page", defaultValue = "0") int page,
                                Model model) {
-
-        List<Cuota> cuotas = cuotaRepository.findAll();
-
-        for (Cuota cuota : cuotas) {
-            cuotaService.actualizarEstadoCuota(cuota);
-        }
-        cuotaRepository.saveAll(cuotas);
-
-        List<Cuota> cuotasFiltradas = cuotas;
-
-        if (estado != null && !estado.isBlank() && !estado.equalsIgnoreCase("TODAS")) {
-            try {
-                EstadoCuota estadoEnum = EstadoCuota.valueOf(estado.toUpperCase());
-                cuotasFiltradas = cuotas.stream()
-                        .filter(c -> c.getEstado() == estadoEnum)
-                        .collect(Collectors.toList());
-            } catch (IllegalArgumentException e) {
-                cuotasFiltradas = cuotas;
+        EstadoCuota estadoFiltro = null;
+        try {
+            if (!"TODAS".equalsIgnoreCase(estado)) {
+                estadoFiltro = EstadoCuota.valueOf(estado.toUpperCase());
             }
+        } catch (IllegalArgumentException ignored) {
+            estado = "TODAS";
         }
 
-        model.addAttribute("cuotas", cuotasFiltradas);
-        model.addAttribute("estadoSeleccionado", estado == null ? "TODAS" : estado.toUpperCase());
+        PageRequest paginacion = PageRequest.of(Math.max(page, 0), 15,
+                Sort.by("fechaVencimiento").descending().and(Sort.by("id").descending()));
+        Page<Cuota> pagina = cuotaRepository.buscarPaginado(buscar.trim(), estadoFiltro, paginacion);
+        List<Cuota> modificadas = pagina.getContent().stream()
+                .filter(cuotaService::actualizarEstadoCuota)
+                .toList();
+        if (!modificadas.isEmpty()) {
+            cuotaRepository.saveAll(modificadas);
+        }
+
+        model.addAttribute("cuotas", pagina.getContent());
+        model.addAttribute("buscar", buscar.trim());
+        model.addAttribute("estadoSeleccionado", estado.toUpperCase());
+        model.addAttribute("paginaActual", pagina.getNumber());
+        model.addAttribute("totalPaginas", pagina.getTotalPages());
+        model.addAttribute("totalElementos", pagina.getTotalElements());
+        model.addAttribute("primerElemento", pagina.getNumber() * pagina.getSize());
 
         return "cuotas";
     }
@@ -79,10 +87,14 @@ public class CuotaController {
 
         if (cuota.getSocioId() == null) {
             result.rejectValue("socioId", "error.cuota", "Debe seleccionar un socio");
+        } else if (!socioRepository.existsById(cuota.getSocioId())) {
+            result.rejectValue("socioId", "error.cuota", "El socio seleccionado ya no está disponible");
         }
 
         if (cuota.getMonto() == null) {
             result.rejectValue("monto", "error.cuota", "El monto es obligatorio");
+        } else if (cuota.getMonto().signum() <= 0) {
+            result.rejectValue("monto", "error.cuota", "El monto debe ser mayor a cero");
         }
 
         if (cuota.getFechaVencimiento() == null) {
@@ -136,10 +148,14 @@ public class CuotaController {
 
         if (cuotaForm.getSocioId() == null) {
             result.rejectValue("socioId", "error.cuota", "Debe seleccionar un socio");
+        } else if (!socioRepository.existsById(cuotaForm.getSocioId())) {
+            result.rejectValue("socioId", "error.cuota", "El socio seleccionado ya no está disponible");
         }
 
         if (cuotaForm.getMonto() == null) {
             result.rejectValue("monto", "error.cuota", "El monto es obligatorio");
+        } else if (cuotaForm.getMonto().signum() <= 0) {
+            result.rejectValue("monto", "error.cuota", "El monto debe ser mayor a cero");
         }
 
         if (cuotaForm.getFechaVencimiento() == null) {
@@ -170,14 +186,19 @@ public class CuotaController {
         return "redirect:/cuotas";
     }
 
-    @GetMapping("/cuotas/eliminar/{id}")
-    public String eliminarCuota(@PathVariable Long id) {
+    @PostMapping("/cuotas/eliminar/{id}")
+    public String eliminarCuota(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         Cuota cuota = cuotaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cuota no encontrada"));
 
         Socio socio = cuota.getSocio();
 
-        pagoRepository.deleteByCuota_Id(id);
+        if (pagoRepository.existsByCuota_Id(id)
+                || pagoRepository.existsByCuotaRenovacionGenerada_Id(id)) {
+            redirectAttributes.addFlashAttribute("error",
+                    "No se puede eliminar una cuota vinculada al historial de pagos.");
+            return "redirect:/cuotas";
+        }
         cuotaRepository.delete(cuota);
 
         if (socio != null) {

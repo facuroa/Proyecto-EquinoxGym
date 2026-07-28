@@ -1,0 +1,8 @@
+[Unit]
+Description=Backup diario de Equinox Gym
+After=mysql.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/opt/equinox-gym/backup.sh
