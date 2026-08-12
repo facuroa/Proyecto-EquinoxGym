@@ -222,6 +222,12 @@ public class CobroService {
 
         Socio socio = cuota.getSocio();
         if (socio != null) {
+            // Cobrarle a un socio dado de baja lo reincorpora: si no, el pago
+            // quedaria registrado y el socio seguiria figurando inactivo.
+            if (socio.isBaja()) {
+                socio.setBaja(false);
+                socio.setFechaBaja(null);
+            }
             socioService.actualizarEstadoSocio(socio);
 
             if (socio.getPlan() != null) {

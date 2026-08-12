@@ -32,6 +32,16 @@ public class Socio {
     @Enumerated(EnumType.STRING)
     private EstadoSocio estado;
 
+    /**
+     * Baja manual dada desde la pantalla de socios. Mientras este en true el
+     * recalculo automatico de estado no la pisa, asi el socio queda inactivo
+     * aunque no tenga cuotas vencidas.
+     */
+    @Column(nullable = false)
+    private boolean baja = false;
+
+    private LocalDate fechaBaja;
+
     @ManyToOne
     @JoinColumn(name = "plan_id")
     private Plan plan;
@@ -80,6 +90,12 @@ public class Socio {
 
     public EstadoSocio getEstado() { return estado; }
     public void setEstado(EstadoSocio estado) { this.estado = estado; }
+
+    public boolean isBaja() { return baja; }
+    public void setBaja(boolean baja) { this.baja = baja; }
+
+    public LocalDate getFechaBaja() { return fechaBaja; }
+    public void setFechaBaja(LocalDate fechaBaja) { this.fechaBaja = fechaBaja; }
 
     public Plan getPlan() { return plan; }
     public void setPlan(Plan plan) { this.plan = plan; }

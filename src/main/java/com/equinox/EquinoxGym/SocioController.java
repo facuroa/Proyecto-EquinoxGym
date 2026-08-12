@@ -283,11 +283,52 @@ public class SocioController {
         if (socio != null) {
             if (pagoRepository.existsByCuota_Socio_Id(socio.getId())) {
                 redirectAttributes.addFlashAttribute("error",
-                        "No se puede eliminar un socio con historial de pagos. Podés dejarlo inactivo.");
+                        "No se puede eliminar a " + socio.getNombre() + " " + socio.getApellido()
+                        + " porque tiene pagos registrados: borrarlo descuadraria la caja y los reportes. "
+                        + "Usá \"Dar de baja\" para sacarlo de los listados sin perder el historial.");
                 return "redirect:/socios";
             }
             seguimientoMorosidadRepository.deleteBySocio_Id(socio.getId());
             socioRepository.delete(socio);
+            redirectAttributes.addFlashAttribute("mensaje",
+                    "Se eliminó a " + socio.getNombre() + " " + socio.getApellido() + ".");
+        }
+
+        return "redirect:/socios";
+    }
+
+    @PostMapping("/socios/baja/{id}")
+    @Transactional
+    public String darDeBaja(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        Socio socio = socioRepository.findById(id).orElse(null);
+
+        if (socio != null) {
+            socio.setBaja(true);
+            socio.setFechaBaja(LocalDate.now());
+            socio.setEstado(EstadoSocio.INACTIVO);
+            socioRepository.save(socio);
+            redirectAttributes.addFlashAttribute("mensaje",
+                    socio.getNombre() + " " + socio.getApellido()
+                    + " quedó inactivo. Su historial de pagos se conserva.");
+        }
+
+        return "redirect:/socios";
+    }
+
+    @PostMapping("/socios/reactivar/{id}")
+    @Transactional
+    public String reactivar(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        Socio socio = socioRepository.findById(id).orElse(null);
+
+        if (socio != null) {
+            socio.setBaja(false);
+            socio.setFechaBaja(null);
+            // El estado real (activo o moroso) lo resuelve el recalculo segun
+            // las cuotas que tenga pendientes.
+            socioService.actualizarEstadoSocio(socio);
+            socioRepository.save(socio);
+            redirectAttributes.addFlashAttribute("mensaje",
+                    socio.getNombre() + " " + socio.getApellido() + " volvió a estar activo.");
         }
 
         return "redirect:/socios";

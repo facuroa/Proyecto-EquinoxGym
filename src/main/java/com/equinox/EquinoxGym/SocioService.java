@@ -42,7 +42,11 @@ public class SocioService {
             }
         }
 
-        if (tieneInactivaPor20Dias) {
+        if (socio.isBaja()) {
+            // La baja manual manda: no se recalcula el estado a partir de las
+            // cuotas, si no el socio volveria a figurar activo al recargar.
+            socio.setEstado(EstadoSocio.INACTIVO);
+        } else if (tieneInactivaPor20Dias) {
             socio.setEstado(EstadoSocio.INACTIVO);
         } else if (tieneVencida) {
             socio.setEstado(EstadoSocio.MOROSO);

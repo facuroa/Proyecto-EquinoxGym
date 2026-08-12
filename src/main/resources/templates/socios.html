@@ -15,6 +15,7 @@
     <main class="main-content">
 
         <div th:replace="~{fragments/toast :: toast('error', ${error})}"></div>
+        <div th:replace="~{fragments/toast :: toast('exito', ${mensaje})}"></div>
 
         <header class="topbar">
             <div>
@@ -140,10 +141,29 @@
                                     <div class="action-buttons-premium">
                                         <a th:href="@{/cobrar(socioId=${socio.id})}" class="btn btn-gold-search btn-sm">Cobrar</a>
                                         <a th:href="@{/socios/editar/{id}(id=${socio.id})}" class="btn btn-edit-premium btn-sm">Editar</a>
+
+                                        <a th:if="${!socio.baja}"
+                                           th:href="@{/socios/baja/{id}(id=${socio.id})}"
+                                           class="btn btn-outline-gold-soft btn-sm"
+                                           data-confirm-delete
+                                           data-titulo="Dar de baja"
+                                           data-confirmar="Sí, dar de baja"
+                                           data-boton-clase="btn btn-gold-action"
+                                           th:data-mensaje="${'¿Dar de baja a ' + socio.nombre + ' ' + socio.apellido + '? Va a figurar como inactivo y se conserva todo su historial. Podés reactivarlo cuando quieras.'}">Dar de baja</a>
+
+                                        <a th:if="${socio.baja}"
+                                           th:href="@{/socios/reactivar/{id}(id=${socio.id})}"
+                                           class="btn btn-gold-action btn-sm"
+                                           data-confirm-delete
+                                           data-titulo="Reactivar socio"
+                                           data-confirmar="Sí, reactivar"
+                                           data-boton-clase="btn btn-gold-action"
+                                           th:data-mensaje="${'¿Reactivar a ' + socio.nombre + ' ' + socio.apellido + '? Vuelve a los listados con el estado que le corresponda según sus cuotas.'}">Reactivar</a>
+
                                         <a th:href="@{/socios/eliminar/{id}(id=${socio.id})}"
                                            class="btn btn-delete-premium btn-sm"
                                            data-confirm-delete
-                                           th:data-mensaje="${'¿Seguro que querés eliminar a ' + socio.nombre + ' ' + socio.apellido + '? Esta acción no se puede deshacer.'}">Eliminar</a>
+                                           th:data-mensaje="${'¿Seguro que querés eliminar a ' + socio.nombre + ' ' + socio.apellido + '? Esta acción no se puede deshacer. Si tiene pagos registrados no se va a poder: usá Dar de baja.'}">Eliminar</a>
                                     </div>
                                 </td>
                             </tr>
