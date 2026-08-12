@@ -696,8 +696,54 @@ a {
 .action-buttons-premium {
     display: flex;
     justify-content: center;
-    gap: 0.55rem;
+    gap: 0.4rem;
     flex-wrap: wrap;
+}
+
+/* Cada accion usa una clase de color distinta y cada una traia su propio
+   padding y su propio radio: Cobrar y Reactivar terminaban del doble de
+   tamano que Editar y Eliminar en la misma fila. Aca se unifica la forma y
+   cada clase aporta solo el color. */
+.action-buttons-premium .btn {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.25;
+    /* Ancho del texto mas largo ("Dar de baja"), para que los cuatro midan
+       exactamente igual y queden en dos filas parejas. */
+    min-width: 5.9rem;
+    /* Los de color solido declaran border:none y los de contorno 1px, asi que
+       sin esto quedan 2px mas altos que el resto en la misma fila. */
+    border: 1px solid transparent;
+    /* Sin esto "Dar de baja" parte en dos lineas y crece al doble de alto. */
+    white-space: nowrap;
+    /* Cobrar usa btn-gold-search, pensada para pegarse a un buscador, que
+       impone esquinas asimetricas con !important. */
+    border-radius: 8px !important;
+}
+
+.action-buttons-premium .btn:hover {
+    transform: none;
+}
+
+/* Dar de baja usa la variante de contorno, transparente sobre el fondo de la
+   fila: al lado de los otros tres parecia texto suelto en vez de un boton. */
+.action-buttons-premium .btn-outline-gold-soft {
+    background: rgba(212, 175, 55, 0.10);
+    border-color: rgba(212, 175, 55, 0.38);
+    color: var(--gold-soft);
+}
+
+.action-buttons-premium .btn-outline-gold-soft:hover {
+    background: rgba(212, 175, 55, 0.18);
+}
+
+/* Sin un ancho minimo la tabla comprime la columna Acciones al ancho de un
+   solo boton y los cuatro quedan uno debajo del otro, con filas altisimas.
+   Con esto entran de a dos por fila. */
+.premium-table th:last-child,
+.premium-table td:last-child {
+    min-width: 15.5rem;
 }
 
 .btn-edit-premium {
@@ -752,8 +798,7 @@ a {
         align-items: stretch;
     }
 
-    .btn-edit-premium,
-    .btn-delete-premium {
+    .action-buttons-premium .btn {
         width: 100%;
     }
 
@@ -2946,11 +2991,24 @@ a {
     font-size: 0.8rem;
 }
 
+/* En grilla, los anchos minimos de las cuatro columnas (130 + 150 + 240 mas
+   el boton) no entraban en el panel y "Guardar movimiento" quedaba cortado
+   fuera de la tarjeta. Con flex, los campos se achican y el boton baja de
+   linea en vez de desbordarse. */
 .cash-movement-form {
-    display: grid;
-    grid-template-columns: minmax(130px, 0.65fr) minmax(150px, 0.8fr) minmax(240px, 1.6fr) auto;
+    display: flex;
+    flex-wrap: wrap;
     align-items: end;
     gap: 0.75rem;
+}
+
+.cash-movement-form .payment-filter-field {
+    flex: 1 1 150px;
+    min-width: 0;
+}
+
+.cash-movement-form .cash-concept-field {
+    flex: 2 1 220px;
 }
 
 .cash-movement-form .premium-filter-select {
@@ -2961,6 +3019,7 @@ a {
 .cash-movement-submit {
     min-height: 52px;
     white-space: nowrap;
+    flex: 0 0 auto;
 }
 
 .cash-closing-panel {
