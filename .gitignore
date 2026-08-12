@@ -36,9 +36,22 @@ build/
 # Configuracion privada de cada entorno
 src/main/resources/application-local.properties
 
-# Material comercial (demo de venta e instalador Windows): no se versiona.
+# Material comercial (demo de venta): no se versiona.
 deploy/demo/
-deploy/windows/
+
+# Kit de Windows: se versionan los scripts, no los binarios ni los secretos.
+# Los pesados (runtime de Java, jar compilado, instalador de MySQL) viajan en
+# el pendrive: GitHub rechaza archivos de mas de 100 MB.
+deploy/windows/runtime/
+deploy/windows/app/*.jar
+deploy/windows/installer/Output/
+deploy/windows/**/*.msi
+deploy/windows/**/*.exe
+deploy/windows/**/*.zip
+# Configuracion real de cada instalacion (los .example si se versionan).
+deploy/windows/config/*.env
+deploy/windows/config/*.cnf
+!deploy/windows/config/*.example
 
 # Config local del asistente de IA, no es parte del proyecto
 .claude/

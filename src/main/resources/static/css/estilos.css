@@ -399,10 +399,71 @@ a {
         flex-direction: column;
     }
 
+    /* La barra lateral pasa a ser una cabecera compacta con los enlaces en
+       fila. Apilada a ancho completo ocupaba la pantalla entera y empujaba
+       el contenido fuera de vista en notebooks de 1366x768 con la escala de
+       Windows al 125% o 150%. */
     .sidebar {
         width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.9rem 1.1rem;
         border-right: none;
         border-bottom: 1px solid var(--border-color);
+        box-shadow: none;
+    }
+
+    .sidebar > div {
+        display: flex;
+        flex: 1 1 auto;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.55rem 0.9rem;
+        min-width: 0;
+    }
+
+    .brand-box {
+        margin-bottom: 0;
+        padding: 0;
+    }
+
+    .brand-logo {
+        width: 40px;
+        height: 40px;
+    }
+
+    .sidebar-user {
+        margin-bottom: 0;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .sidebar-user-label {
+        display: none;
+    }
+
+    .sidebar-nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .sidebar-link {
+        padding: 0.45rem 0.8rem;
+        border-radius: 10px;
+        font-size: 0.92rem;
+    }
+
+    .sidebar-link:hover {
+        transform: none;
+    }
+
+    .sidebar .btn-logout {
+        width: auto;
+        padding: 0.5rem 0.95rem;
+        font-size: 0.9rem;
     }
 
     .main-content {

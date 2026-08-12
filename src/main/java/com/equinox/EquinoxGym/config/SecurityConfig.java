@@ -29,7 +29,7 @@ public class SecurityConfig {
         http
             .authenticationProvider(authenticationProvider())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/error", "/css/**", "/js/**", "/img/**", "/branding/**").permitAll()
+                .requestMatchers("/login", "/error", "/css/**", "/js/**", "/img/**", "/branding/**", "/vendor/**").permitAll()
                 .requestMatchers("/usuarios/**", "/planes/**", "/reportes/**", "/auditoria/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
