@@ -386,22 +386,39 @@ class ApplicationTests {
     void whatsappNormalizaNumerosArgentinosSinAdivinarFormatosInvalidos() {
         GestionMorosidadDTO gestion = new GestionMorosidadDTO();
         Socio socio = new Socio();
+        socio.setNombre("Ana");
         gestion.setSocio(socio);
+        gestion.setGymName("Keep Fit Gym");
+        gestion.setDiasAtraso(3);
+        gestion.setVencimientoMasAntiguo(java.time.LocalDate.of(2026, 1, 10));
+        gestion.setSaldoPendiente(new java.math.BigDecimal("15000"));
+
+        String base = "https://wa.me/5493815551234";
 
         socio.setTelefono("381 555-1234");
-        org.junit.jupiter.api.Assertions.assertEquals("https://wa.me/5493815551234", gestion.getWhatsappUrl());
+        org.junit.jupiter.api.Assertions.assertTrue(gestion.getWhatsappUrl().startsWith(base + "?text="));
 
         socio.setTelefono("+54 9 381 555-1234");
-        org.junit.jupiter.api.Assertions.assertEquals("https://wa.me/5493815551234", gestion.getWhatsappUrl());
+        org.junit.jupiter.api.Assertions.assertTrue(gestion.getWhatsappUrl().startsWith(base + "?text="));
 
         socio.setTelefono("+54 381 555-1234");
-        org.junit.jupiter.api.Assertions.assertEquals("https://wa.me/5493815551234", gestion.getWhatsappUrl());
+        org.junit.jupiter.api.Assertions.assertTrue(gestion.getWhatsappUrl().startsWith(base + "?text="));
 
         socio.setTelefono("0381 555-1234");
-        org.junit.jupiter.api.Assertions.assertEquals("https://wa.me/5493815551234", gestion.getWhatsappUrl());
+        org.junit.jupiter.api.Assertions.assertTrue(gestion.getWhatsappUrl().startsWith(base + "?text="));
 
         socio.setTelefono("12345");
         org.junit.jupiter.api.Assertions.assertNull(gestion.getWhatsappUrl());
+    }
+
+    @Test
+    void whatsappMensajeRecordatorioNoFiltraValoresNulos() {
+        GestionMorosidadDTO gestion = new GestionMorosidadDTO();
+        Socio socio = new Socio();
+        socio.setNombre("Ana");
+        gestion.setSocio(socio);
+
+        org.junit.jupiter.api.Assertions.assertFalse(gestion.getMensajeRecordatorio().contains("null"));
     }
 
     @Test

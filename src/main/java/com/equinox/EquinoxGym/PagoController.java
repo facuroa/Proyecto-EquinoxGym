@@ -1,5 +1,6 @@
 package com.equinox.EquinoxGym;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -9,24 +10,30 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Controller
 public class PagoController {
 
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     private final PagoRepository pagoRepository;
     private final CuotaRepository cuotaRepository;
     private final CuotaService cuotaService;
     private final CobroService cobroService;
+    private final String gymName;
 
     public PagoController(PagoRepository pagoRepository,
                           CuotaRepository cuotaRepository,
                           CuotaService cuotaService,
-                          CobroService cobroService) {
+                          CobroService cobroService,
+                          @Value("${equinox.branding.gym-name:Keep Fit Gym}") String gymName) {
         this.pagoRepository = pagoRepository;
         this.cuotaRepository = cuotaRepository;
         this.cuotaService = cuotaService;
         this.cobroService = cobroService;
+        this.gymName = gymName;
     }
 
     @GetMapping("/pagos")
@@ -108,9 +115,12 @@ public class PagoController {
             return "redirect:/pagos";
         }
 
+        Socio socio = pago.getCuota() != null ? pago.getCuota().getSocio() : null;
+
         model.addAttribute("pago", pago);
-        model.addAttribute("socio", pago.getCuota() != null ? pago.getCuota().getSocio() : null);
+        model.addAttribute("socio", socio);
         model.addAttribute("origenSocio", origenSocio);
+        model.addAttribute("whatsappUrl", construirWhatsappComprobante(pago, socio));
         return "comprobante-pago";
     }
 
@@ -135,6 +145,16 @@ public class PagoController {
         model.addAttribute("cuotasPendientes", cuotasImpagas);
         model.addAttribute("cuotaIdSeleccionada", cuotaId);
         model.addAttribute("error", mensaje);
+    }
+
+    private String construirWhatsappComprobante(Pago pago, Socio socio) {
+        if (socio == null || pago.isAnulado()) {
+            return null;
+        }
+        String mensaje = "Hola " + socio.getNombre() + ", te compartimos tu comprobante de " + gymName
+                + ": pago de $ " + pago.getMonto() + " registrado el "
+                + FORMATO_FECHA.format(pago.getFechaPago()) + " (" + pago.getNumeroComprobante() + "). ¡Gracias!";
+        return WhatsAppLinkBuilder.construirUrl(socio.getTelefono(), mensaje);
     }
 
     private void guardarCuotasConEstadoModificado(List<Cuota> cuotas) {

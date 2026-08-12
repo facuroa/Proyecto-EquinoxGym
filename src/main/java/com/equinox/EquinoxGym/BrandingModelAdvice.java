@@ -9,7 +9,7 @@ public class BrandingModelAdvice {
 
     private final String gymName;
 
-    public BrandingModelAdvice(@Value("${equinox.branding.gym-name:Gym System}") String gymName) {
+    public BrandingModelAdvice(@Value("${equinox.branding.gym-name:Keep Fit Gym}") String gymName) {
         this.gymName = gymName;
     }
 

@@ -12,6 +12,7 @@ public class GestionMorosidadDTO {
     private int cantidadCuotas;
     private String categoria;
     private SeguimientoMorosidad ultimoSeguimiento;
+    private String gymName;
 
     public Socio getSocio() { return socio; }
     public void setSocio(Socio socio) { this.socio = socio; }
@@ -34,6 +35,9 @@ public class GestionMorosidadDTO {
     public SeguimientoMorosidad getUltimoSeguimiento() { return ultimoSeguimiento; }
     public void setUltimoSeguimiento(SeguimientoMorosidad ultimoSeguimiento) { this.ultimoSeguimiento = ultimoSeguimiento; }
 
+    public String getGymName() { return gymName; }
+    public void setGymName(String gymName) { this.gymName = gymName; }
+
     public String getTextoSituacion() {
         if (diasAtraso > 0) {
             return diasAtraso == 1 ? "1 día de atraso" : diasAtraso + " días de atraso";
@@ -55,25 +59,24 @@ public class GestionMorosidadDTO {
     }
 
     public String getWhatsappUrl() {
-        if (socio == null || socio.getTelefono() == null) {
+        if (socio == null) {
             return null;
         }
-        String numero = socio.getTelefono().replaceAll("\\D", "");
-        if (numero.startsWith("00")) {
-            numero = numero.substring(2);
+        return WhatsAppLinkBuilder.construirUrl(socio.getTelefono(), getMensajeRecordatorio());
+    }
+
+    public String getMensajeRecordatorio() {
+        if (socio == null) {
+            return null;
         }
-        if (numero.startsWith("0") && numero.length() == 11) {
-            numero = numero.substring(1);
-        }
-        if (numero.startsWith("549") && numero.length() == 13) {
-            return "https://wa.me/" + numero;
-        }
-        if (numero.startsWith("54") && numero.length() == 12) {
-            return "https://wa.me/549" + numero.substring(2);
-        }
-        if (numero.length() == 10) {
-            return "https://wa.me/549" + numero;
-        }
-        return null;
+        String marca = (gymName == null || gymName.isBlank()) ? "el gimnasio" : gymName;
+        String nombre = (socio.getNombre() == null || socio.getNombre().isBlank()) ? "" : (" " + socio.getNombre());
+        String situacion = diasAtraso > 0
+                ? "tenés una cuota vencida hace " + diasAtraso + (diasAtraso == 1 ? " día" : " días")
+                : "tu cuota está por vencer";
+        String vencimiento = vencimientoMasAntiguo == null ? "" : " (vencimiento " + vencimientoMasAntiguo + ")";
+        return "Hola" + nombre + ", te escribimos de " + marca + ". Te recordamos que " + situacion
+                + vencimiento + ", por un total de $ " + saldoPendiente
+                + ". ¡Te esperamos para ponerte al día!";
     }
 }

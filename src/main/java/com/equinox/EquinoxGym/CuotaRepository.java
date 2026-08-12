@@ -27,6 +27,8 @@ public interface CuotaRepository extends JpaRepository<Cuota, Long> {
 
     List<Cuota> findByFechaPagoIsNullAndFechaVencimientoLessThanEqualOrderByFechaVencimientoAsc(LocalDate fecha);
 
+    List<Cuota> findByFechaPagoIsNullAndFechaVencimiento(LocalDate fecha);
+
     boolean existsBySocio_IdAndFechaPagoIsNullAndFechaVencimientoLessThanEqual(Long socioId, LocalDate fecha);
 
     long countByFechaPagoIsNullAndFechaVencimientoBetween(LocalDate desde, LocalDate hasta);

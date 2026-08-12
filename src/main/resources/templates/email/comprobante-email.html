@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Comprobante de pago</title>
+</head>
+<body style="margin:0; padding:24px; background-color:#f4f1ea; font-family:Arial, Helvetica, sans-serif; color:#2c2418;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px; margin:0 auto; background-color:#ffffff; border-radius:8px; overflow:hidden; border:1px solid #e4ddca;">
+        <tr>
+            <td style="background-color:#1f1a12; padding:20px 28px;">
+                <span style="color:#e7c873; font-size:20px; font-weight:bold;" th:text="${gymName}">Keep Fit Gym</span>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:28px;">
+                <p style="margin:0 0 16px; font-size:16px;" th:text="${'Hola ' + (socio != null ? socio.nombre : '') + ','}">Hola,</p>
+                <p style="margin:0 0 20px; font-size:14px; line-height:1.5;">
+                    Te confirmamos que registramos tu pago. Te dejamos el resumen acá abajo y
+                    el comprobante en PDF adjunto a este email.
+                </p>
+                <table role="presentation" width="100%" cellpadding="8" cellspacing="0" style="font-size:14px; border:1px solid #e4ddca; border-radius:6px;">
+                    <tr>
+                        <td style="color:#6b6250;">Comprobante</td>
+                        <td style="text-align:right; font-weight:bold;" th:text="${pago.numeroComprobante}">EQX-00000001</td>
+                    </tr>
+                    <tr>
+                        <td style="color:#6b6250;">Fecha de pago</td>
+                        <td style="text-align:right;" th:text="${#temporals.format(pago.fechaPago, 'dd/MM/yyyy')}">-</td>
+                    </tr>
+                    <tr>
+                        <td style="color:#6b6250;">Medio de pago</td>
+                        <td style="text-align:right;" th:text="${pago.medioPago}">-</td>
+                    </tr>
+                    <tr>
+                        <td style="color:#6b6250; font-weight:bold;">Total abonado</td>
+                        <td style="text-align:right; font-weight:bold;" th:text="${'$ ' + pago.monto}">$ 0</td>
+                    </tr>
+                </table>
+                <p style="margin:24px 0 0; font-size:12px; color:#8a806a;" th:text="${'Este comprobante corresponde a un movimiento registrado en ' + gymName + '.'}">
+                    Este comprobante corresponde a un movimiento registrado en Keep Fit Gym.
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

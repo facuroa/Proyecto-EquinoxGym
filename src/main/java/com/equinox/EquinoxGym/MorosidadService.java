@@ -1,5 +1,6 @@
 package com.equinox.EquinoxGym;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,17 +27,20 @@ public class MorosidadService {
     private final SeguimientoMorosidadRepository seguimientoRepository;
     private final CuotaService cuotaService;
     private final SocioService socioService;
+    private final String gymName;
 
     public MorosidadService(CuotaRepository cuotaRepository,
                             SocioRepository socioRepository,
                             SeguimientoMorosidadRepository seguimientoRepository,
                             CuotaService cuotaService,
-                            SocioService socioService) {
+                            SocioService socioService,
+                            @Value("${equinox.branding.gym-name:Keep Fit Gym}") String gymName) {
         this.cuotaRepository = cuotaRepository;
         this.socioRepository = socioRepository;
         this.seguimientoRepository = seguimientoRepository;
         this.cuotaService = cuotaService;
         this.socioService = socioService;
+        this.gymName = gymName;
     }
 
     @Transactional
@@ -88,6 +92,7 @@ public class MorosidadService {
                     .filter(monto -> monto != null)
                     .reduce(BigDecimal.ZERO, BigDecimal::add));
             gestion.setCategoria(categoria(vencimiento, hoy));
+            gestion.setGymName(gymName);
             gestiones.add(gestion);
         }
 

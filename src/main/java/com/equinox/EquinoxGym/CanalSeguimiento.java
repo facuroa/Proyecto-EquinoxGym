@@ -4,6 +4,7 @@ public enum CanalSeguimiento {
     WHATSAPP("WhatsApp"),
     LLAMADA("Llamada"),
     PRESENCIAL("Presencial"),
+    EMAIL("Email"),
     OTRO("Otro");
 
     private final String descripcion;

@@ -24,6 +24,7 @@ public class CobroService {
     private final SocioService socioService;
     private final CajaService cajaService;
     private final AuditoriaService auditoriaService;
+    private final NotificacionEmailService notificacionEmailService;
 
     public CobroService(SocioRepository socioRepository,
                         CuotaRepository cuotaRepository,
@@ -31,7 +32,8 @@ public class CobroService {
                         CuotaService cuotaService,
                         SocioService socioService,
                         CajaService cajaService,
-                        AuditoriaService auditoriaService) {
+                        AuditoriaService auditoriaService,
+                        NotificacionEmailService notificacionEmailService) {
         this.socioRepository = socioRepository;
         this.cuotaRepository = cuotaRepository;
         this.pagoRepository = pagoRepository;
@@ -39,6 +41,7 @@ public class CobroService {
         this.socioService = socioService;
         this.cajaService = cajaService;
         this.auditoriaService = auditoriaService;
+        this.notificacionEmailService = notificacionEmailService;
     }
 
     public List<SocioBusquedaDTO> buscarSocios(String texto) {
@@ -234,6 +237,13 @@ public class CobroService {
         auditoriaService.registrar(usuario, "Pago registrado",
                 "Cuota de " + socioNombre + " · $ " + pagoGuardado.getMonto()
                         + " · " + pagoGuardado.getMedioPago());
+
+        try {
+            notificacionEmailService.enviarComprobantePago(pagoGuardado);
+        } catch (Exception e) {
+            System.err.println(">>> No se pudo enviar el comprobante por email: " + e.getMessage());
+        }
+
         return pagoGuardado;
     }
 
