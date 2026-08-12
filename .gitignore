@@ -33,7 +33,9 @@ build/
 ### VS Code ###
 .vscode/
 
-# Configuracion privada de cada entorno
+# Configuracion privada de cada entorno. Va en la raiz del proyecto, fuera de
+# src/main/resources, para que Maven no la empaquete dentro del jar.
+/application-local.properties
 src/main/resources/application-local.properties
 
 # Material comercial (demo de venta): no se versiona.
