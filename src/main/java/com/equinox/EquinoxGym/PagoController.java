@@ -28,19 +28,22 @@ public class PagoController {
     private final CobroService cobroService;
     private final ComprobantePdfStorageService pdfStorageService;
     private final String gymName;
+    private final String appUrl;
 
     public PagoController(PagoRepository pagoRepository,
                           CuotaRepository cuotaRepository,
                           CuotaService cuotaService,
                           CobroService cobroService,
                           ComprobantePdfStorageService pdfStorageService,
-                          @Value("${equinox.branding.gym-name:Keep Fit Gym}") String gymName) {
+                          @Value("${equinox.branding.gym-name:Keep Fit Gym}") String gymName,
+                          @Value("${equinox.app-url:http://localhost:8085}") String appUrl) {
         this.pagoRepository = pagoRepository;
         this.cuotaRepository = cuotaRepository;
         this.cuotaService = cuotaService;
         this.cobroService = cobroService;
         this.pdfStorageService = pdfStorageService;
         this.gymName = gymName;
+        this.appUrl = appUrl;
     }
 
     @GetMapping("/pagos")
@@ -183,7 +186,13 @@ public class PagoController {
         }
         String mensaje = "Hola " + socio.getNombre() + ", te compartimos tu comprobante de " + gymName
                 + ": pago de $ " + pago.getMonto() + " registrado el "
-                + FORMATO_FECHA.format(pago.getFechaPago()) + " (" + pago.getNumeroComprobante() + "). ¡Gracias!";
+                + FORMATO_FECHA.format(pago.getFechaPago()) + " (" + pago.getNumeroComprobante() + ").\n";
+
+        if (pago.getNombreArchivoComprobante() != null) {
+            mensaje += "Descargá aquí: " + appUrl + "/pagos/" + pago.getId() + "/descargar-pdf\n";
+        }
+
+        mensaje += "¡Gracias!";
         return WhatsAppLinkBuilder.construirUrl(socio.getTelefono(), mensaje);
     }
 
