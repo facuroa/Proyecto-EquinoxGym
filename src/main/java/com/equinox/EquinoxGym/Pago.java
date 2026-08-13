@@ -55,6 +55,8 @@ public class Pago {
     @Column(length = 500)
     private String motivoAnulacion;
 
+    private String nombreArchivoComprobante;
+
     public Pago() {
     }
 
@@ -127,4 +129,7 @@ public class Pago {
     public String getNumeroComprobante() {
         return id == null ? "EQX-PENDIENTE" : String.format("EQX-%08d", id);
     }
+
+    public String getNombreArchivoComprobante() { return nombreArchivoComprobante; }
+    public void setNombreArchivoComprobante(String nombreArchivoComprobante) { this.nombreArchivoComprobante = nombreArchivoComprobante; }
 }

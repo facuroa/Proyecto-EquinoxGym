@@ -1,6 +1,9 @@
 package com.equinox.EquinoxGym;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.io.IOException;
 
 @Controller
 public class PagoController {
@@ -22,17 +26,20 @@ public class PagoController {
     private final CuotaRepository cuotaRepository;
     private final CuotaService cuotaService;
     private final CobroService cobroService;
+    private final ComprobantePdfStorageService pdfStorageService;
     private final String gymName;
 
     public PagoController(PagoRepository pagoRepository,
                           CuotaRepository cuotaRepository,
                           CuotaService cuotaService,
                           CobroService cobroService,
+                          ComprobantePdfStorageService pdfStorageService,
                           @Value("${equinox.branding.gym-name:Keep Fit Gym}") String gymName) {
         this.pagoRepository = pagoRepository;
         this.cuotaRepository = cuotaRepository;
         this.cuotaService = cuotaService;
         this.cobroService = cobroService;
+        this.pdfStorageService = pdfStorageService;
         this.gymName = gymName;
     }
 
@@ -122,6 +129,29 @@ public class PagoController {
         model.addAttribute("origenSocio", origenSocio);
         model.addAttribute("whatsappUrl", construirWhatsappComprobante(pago, socio));
         return "comprobante-pago";
+    }
+
+    @GetMapping("/pagos/{id}/descargar-pdf")
+    public ResponseEntity<byte[]> descargarComprobantePdf(@PathVariable Long id) {
+        try {
+            Pago pago = pagoRepository.findById(id).orElse(null);
+            if (pago == null || pago.getNombreArchivoComprobante() == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            byte[] pdf = pdfStorageService.obtenerComprobante(pago.getNombreArchivoComprobante());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment",
+                "Comprobante-" + pago.getNumeroComprobante() + ".pdf");
+
+            return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdf);
+        } catch (IOException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/pagos/{id}/anular")

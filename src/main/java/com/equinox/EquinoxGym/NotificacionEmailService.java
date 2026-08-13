@@ -8,6 +8,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.ITemplateEngine;
 import org.thymeleaf.context.Context;
+import java.io.IOException;
 
 @Service
 public class NotificacionEmailService {
@@ -15,19 +16,25 @@ public class NotificacionEmailService {
     private final JavaMailSender mailSender;
     private final ITemplateEngine templateEngine;
     private final LogoService logoService;
+    private final ComprobantePdfStorageService pdfStorageService;
     private final boolean habilitado;
     private final String gymName;
+    private final String appUrl;
 
     public NotificacionEmailService(JavaMailSender mailSender,
                                     ITemplateEngine templateEngine,
                                     LogoService logoService,
+                                    ComprobantePdfStorageService pdfStorageService,
                                     @Value("${equinox.notificaciones.email.habilitado:false}") boolean habilitado,
-                                    @Value("${equinox.branding.gym-name:Keep Fit Gym}") String gymName) {
+                                    @Value("${equinox.branding.gym-name:Keep Fit Gym}") String gymName,
+                                    @Value("${equinox.app-url:http://localhost:8085}") String appUrl) {
         this.mailSender = mailSender;
         this.templateEngine = templateEngine;
         this.logoService = logoService;
+        this.pdfStorageService = pdfStorageService;
         this.habilitado = habilitado;
         this.gymName = gymName;
+        this.appUrl = appUrl;
     }
 
     public void enviarComprobantePago(Pago pago) {
@@ -46,8 +53,17 @@ public class NotificacionEmailService {
 
         String asunto = "Comprobante de pago " + pago.getNumeroComprobante() + " - " + gymName;
         byte[] pdf = generarPdfComprobante(pago, socio);
-        String nombreAdjunto = "Comprobante-" + pago.getNumeroComprobante() + ".pdf";
-        enviar(socio.getEmail(), asunto, "email/comprobante-email", contexto, nombreAdjunto, pdf);
+
+        // Guardar PDF en servidor y generar link
+        try {
+            String nombreArchivo = pdfStorageService.guardarComprobante(pdf, pago.getId());
+            pago.setNombreArchivoComprobante(nombreArchivo);
+            String linkDescarga = appUrl + "/pagos/" + pago.getId() + "/descargar-pdf";
+            contexto.setVariable("linkDescargaComprobante", linkDescarga);
+            enviar(socio.getEmail(), asunto, "email/comprobante-email", contexto);
+        } catch (IOException e) {
+            System.err.println(">>> No se pudo guardar el PDF del comprobante: " + e.getMessage());
+        }
     }
 
     public void enviarRecordatorioVencimiento(Cuota cuota) {

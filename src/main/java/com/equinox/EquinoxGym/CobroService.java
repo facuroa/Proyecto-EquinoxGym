@@ -246,6 +246,9 @@ public class CobroService {
 
         try {
             notificacionEmailService.enviarComprobantePago(pagoGuardado);
+            if (pagoGuardado.getNombreArchivoComprobante() != null) {
+                pagoRepository.save(pagoGuardado);
+            }
         } catch (Exception e) {
             System.err.println(">>> No se pudo enviar el comprobante por email: " + e.getMessage());
         }
