@@ -7,7 +7,6 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
-import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,10 +27,6 @@ public final class ComprobantePdfGenerator {
     }
 
     public static byte[] generar(Pago pago, Socio socio, String gymName) throws IOException {
-        return generar(pago, socio, gymName, null);
-    }
-
-    public static byte[] generar(Pago pago, Socio socio, String gymName, byte[] logoBytes) throws IOException {
         try (PDDocument documento = new PDDocument()) {
             PDPage pagina = new PDPage(PDRectangle.A4);
             documento.addPage(pagina);
@@ -43,29 +38,11 @@ public final class ComprobantePdfGenerator {
             float y = pagina.getMediaBox().getHeight() - MARGEN;
 
             try (PDPageContentStream cs = new PDPageContentStream(documento, pagina)) {
-                float xTexto = MARGEN;
-                float altoLogo = 0f;
-                if (logoBytes != null && logoBytes.length > 0) {
-                    try {
-                        PDImageXObject imagen = PDImageXObject.createFromByteArray(documento, logoBytes, "logo");
-                        altoLogo = 44f;
-                        float anchoLogo = altoLogo * imagen.getWidth() / (float) imagen.getHeight();
-                        cs.drawImage(imagen, MARGEN, y - altoLogo, anchoLogo, altoLogo);
-                        xTexto = MARGEN + anchoLogo + 14f;
-                    } catch (IOException | RuntimeException e) {
-                        // Formato de imagen no soportado: se sigue sin logo en vez de romper el comprobante.
-                        altoLogo = 0f;
-                        xTexto = MARGEN;
-                    }
-                }
-
-                float yTope = y;
-                float yTexto = escribir(cs, negrita, 20, xTexto, yTope, gymName);
-                yTexto -= 6;
-                yTexto = escribir(cs, normal, 11, xTexto, yTexto, "Comprobante de pago");
-                yTexto = escribir(cs, normal, 10, xTexto, yTexto, "Comprobante " + pago.getNumeroComprobante());
-
-                y = Math.min(yTexto, yTope - altoLogo) - 14;
+                y = escribir(cs, negrita, 20, MARGEN, y, gymName);
+                y -= 6;
+                y = escribir(cs, normal, 11, MARGEN, y, "Comprobante de pago");
+                y = escribir(cs, normal, 10, MARGEN, y, "Comprobante " + pago.getNumeroComprobante());
+                y -= 10;
                 lineaHorizontal(cs, MARGEN, y, anchoUtil);
                 y -= 24;
 

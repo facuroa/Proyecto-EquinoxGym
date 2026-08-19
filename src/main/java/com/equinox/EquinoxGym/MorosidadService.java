@@ -34,7 +34,7 @@ public class MorosidadService {
                             SeguimientoMorosidadRepository seguimientoRepository,
                             CuotaService cuotaService,
                             SocioService socioService,
-                            @Value("${equinox.branding.gym-name:Keep Fit Gym}") String gymName) {
+                            @Value("${equinox.branding.gym-name:Gym System}") String gymName) {
         this.cuotaRepository = cuotaRepository;
         this.socioRepository = socioRepository;
         this.seguimientoRepository = seguimientoRepository;

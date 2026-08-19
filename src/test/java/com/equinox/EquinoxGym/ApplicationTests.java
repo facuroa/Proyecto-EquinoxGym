@@ -388,7 +388,7 @@ class ApplicationTests {
         Socio socio = new Socio();
         socio.setNombre("Ana");
         gestion.setSocio(socio);
-        gestion.setGymName("Keep Fit Gym");
+        gestion.setGymName("Gym System");
         gestion.setDiasAtraso(3);
         gestion.setVencimientoMasAntiguo(java.time.LocalDate.of(2026, 1, 10));
         gestion.setSaldoPendiente(new java.math.BigDecimal("15000"));

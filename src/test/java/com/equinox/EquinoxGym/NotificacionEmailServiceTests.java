@@ -9,7 +9,7 @@ class NotificacionEmailServiceTests {
 
     @Test
     void noHaceNadaCuandoElFlagEstaApagado() {
-        NotificacionEmailService servicio = new NotificacionEmailService(null, null, null, false, "Keep Fit Gym");
+        NotificacionEmailService servicio = new NotificacionEmailService(null, null, false, "Gym System");
 
         Socio socio = new Socio();
         socio.setEmail("socio@correo.com");
@@ -30,7 +30,7 @@ class NotificacionEmailServiceTests {
 
     @Test
     void noHaceNadaSiElSocioNoTieneEmailAunConElFlagEncendido() {
-        NotificacionEmailService servicio = new NotificacionEmailService(null, null, null, true, "Keep Fit Gym");
+        NotificacionEmailService servicio = new NotificacionEmailService(null, null, true, "Gym System");
 
         Socio socio = new Socio();
         Cuota cuota = new Cuota();

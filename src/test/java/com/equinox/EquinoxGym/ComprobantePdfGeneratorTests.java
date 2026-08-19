@@ -29,7 +29,7 @@ class ComprobantePdfGeneratorTests {
         pago.setFechaRegistro(LocalDateTime.of(2026, 8, 10, 22, 4));
         pago.setRegistradoPor("admin");
 
-        byte[] pdf = ComprobantePdfGenerator.generar(pago, socio, "Keep Fit Gym");
+        byte[] pdf = ComprobantePdfGenerator.generar(pago, socio, "Gym System");
 
         assertThat(pdf).isNotEmpty();
         assertThat(new String(pdf, 0, 5, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF-");
@@ -42,36 +42,7 @@ class ComprobantePdfGeneratorTests {
         pago.setMedioPago("Efectivo");
         pago.setFechaPago(LocalDate.now());
 
-        byte[] pdf = ComprobantePdfGenerator.generar(pago, null, "Keep Fit Gym");
-
-        assertThat(pdf).isNotEmpty();
-    }
-
-    @Test
-    void incluyeElLogoCuandoSePasaUnaImagenValida() throws Exception {
-        Pago pago = new Pago();
-        pago.setMonto(new BigDecimal("10000"));
-        pago.setMedioPago("Efectivo");
-        pago.setFechaPago(LocalDate.now());
-        byte[] logo = new org.springframework.core.io.ClassPathResource("static/img/icono.png")
-                .getContentAsByteArray();
-
-        byte[] pdfConLogo = ComprobantePdfGenerator.generar(pago, null, "Keep Fit Gym", logo);
-        byte[] pdfSinLogo = ComprobantePdfGenerator.generar(pago, null, "Keep Fit Gym", null);
-
-        assertThat(pdfConLogo).isNotEmpty();
-        // El PDF con la imagen embebida es sensiblemente mas pesado que el que solo tiene texto.
-        assertThat(pdfConLogo.length).isGreaterThan(pdfSinLogo.length);
-    }
-
-    @Test
-    void noRompeSiElLogoEsInvalido() throws Exception {
-        Pago pago = new Pago();
-        pago.setMonto(new BigDecimal("10000"));
-        pago.setMedioPago("Efectivo");
-        pago.setFechaPago(LocalDate.now());
-
-        byte[] pdf = ComprobantePdfGenerator.generar(pago, null, "Keep Fit Gym", "esto no es una imagen".getBytes());
+        byte[] pdf = ComprobantePdfGenerator.generar(pago, null, "Gym System");
 
         assertThat(pdf).isNotEmpty();
     }

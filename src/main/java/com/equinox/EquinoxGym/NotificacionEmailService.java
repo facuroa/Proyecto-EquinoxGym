@@ -14,18 +14,15 @@ public class NotificacionEmailService {
 
     private final JavaMailSender mailSender;
     private final ITemplateEngine templateEngine;
-    private final LogoService logoService;
     private final boolean habilitado;
     private final String gymName;
 
     public NotificacionEmailService(JavaMailSender mailSender,
                                     ITemplateEngine templateEngine,
-                                    LogoService logoService,
                                     @Value("${equinox.notificaciones.email.habilitado:false}") boolean habilitado,
-                                    @Value("${equinox.branding.gym-name:Keep Fit Gym}") String gymName) {
+                                    @Value("${equinox.branding.gym-name:Gym System}") String gymName) {
         this.mailSender = mailSender;
         this.templateEngine = templateEngine;
-        this.logoService = logoService;
         this.habilitado = habilitado;
         this.gymName = gymName;
     }
@@ -92,8 +89,7 @@ public class NotificacionEmailService {
 
     private byte[] generarPdfComprobante(Pago pago, Socio socio) {
         try {
-            byte[] logo = logoService.obtenerLogoBytes();
-            return ComprobantePdfGenerator.generar(pago, socio, gymName, logo);
+            return ComprobantePdfGenerator.generar(pago, socio, gymName);
         } catch (Exception e) {
             System.err.println(">>> No se pudo generar el PDF del comprobante: " + e.getMessage());
             return null;

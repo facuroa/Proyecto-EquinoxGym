@@ -28,7 +28,7 @@ public class PagoController {
                           CuotaRepository cuotaRepository,
                           CuotaService cuotaService,
                           CobroService cobroService,
-                          @Value("${equinox.branding.gym-name:Keep Fit Gym}") String gymName) {
+                          @Value("${equinox.branding.gym-name:Gym System}") String gymName) {
         this.pagoRepository = pagoRepository;
         this.cuotaRepository = cuotaRepository;
         this.cuotaService = cuotaService;
