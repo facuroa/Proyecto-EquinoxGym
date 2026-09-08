@@ -402,22 +402,28 @@ public class CobroService {
 
         LocalDate proximoVencimiento = baseRenovacion.plusMonths(socio.getPlan().getDuracionMeses());
 
+        // La vigencia del socio avanza siempre que se cobra, se haya tenido que
+        // crear la cuota siguiente o no. Cuando esto vivia adentro del if, al
+        // socio que ya tenia cargada la renovacion se le registraba el pago pero
+        // le quedaba el vencimiento viejo: pagaba anticipado y la ficha seguia
+        // diciendo que vencia en tres dias.
+        socio.setFechaInicioPlan(baseRenovacion);
+        socio.setFechaVencimientoPlan(proximoVencimiento);
+
         boolean yaExiste = socio.getId() != null
                 && cuotaRepository.existsBySocio_IdAndFechaVencimiento(socio.getId(), proximoVencimiento);
-
-        if (!yaExiste) {
-            Cuota siguienteCuota = new Cuota();
-            siguienteCuota.setSocio(socio);
-            siguienteCuota.setMonto(socio.getPlan().getPrecio());
-            siguienteCuota.setFechaVencimiento(proximoVencimiento);
-            siguienteCuota.setEstado(EstadoCuota.PENDIENTE);
-            cuotaRepository.save(siguienteCuota);
-
-            socio.setFechaInicioPlan(baseRenovacion);
-            socio.setFechaVencimientoPlan(proximoVencimiento);
-            return siguienteCuota;
+        if (yaExiste) {
+            return null;
         }
-        return null;
+
+        Cuota siguienteCuota = new Cuota();
+        siguienteCuota.setSocio(socio);
+        siguienteCuota.setMonto(socio.getPlan().getPrecio());
+        siguienteCuota.setFechaVencimiento(proximoVencimiento);
+        siguienteCuota.setEstado(EstadoCuota.PENDIENTE);
+        cuotaRepository.save(siguienteCuota);
+
+        return siguienteCuota;
     }
 
     private String usuarioActual() {

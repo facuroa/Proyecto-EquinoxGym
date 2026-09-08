@@ -117,6 +117,26 @@ class CobroServiceIntegrationTests {
     }
 
     @Test
+    void pagarAnticipadoActualizaLaVigenciaAunqueLaRenovacionYaExista() {
+        Plan plan = guardarPlan("Mensual renovacion previa", 1, "40000");
+        Socio socio = guardarSocio("Renata", "97111222");
+        LocalDate vencimientoProximo = LocalDate.now().plusDays(3);
+        Cuota aPagar = guardarCuota(socio, vencimientoProximo, plan.getPrecio());
+        // El socio ya tiene cargada la cuota del periodo siguiente.
+        guardarCuota(socio, vencimientoProximo.plusMonths(1), plan.getPrecio());
+        socio.setPlan(plan);
+        socio.setFechaVencimientoPlan(vencimientoProximo);
+        socioRepository.save(socio);
+
+        cobroService.registrarPago(aPagar, plan.getPrecio(), "Efectivo");
+
+        // Aunque no haya que crear la renovacion porque ya existe, la vigencia
+        // del socio tiene que avanzar igual: si no, sigue mostrando el
+        // vencimiento viejo como si no hubiera pagado.
+        assertThat(socio.getFechaVencimientoPlan()).isEqualTo(vencimientoProximo.plusMonths(1));
+    }
+
+    @Test
     void reprogramarElPlanMueveLaCuotaImpagaJuntoConElVencimiento() {
         Plan plan = guardarPlan("Mensual reprogramado", 1, "31000");
         Socio socio = guardarSocio("Nadia", "95111222");
