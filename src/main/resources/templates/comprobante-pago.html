@@ -17,6 +17,8 @@
         <a th:if="${origenSocio == null and socio == null}" th:href="@{/pagos}" class="btn btn-outline-gold-soft">Volver a pagos</a>
         <a th:if="${socio != null and pago.cuotaRenovacionGenerada != null and !pago.anulado}"
            th:href="@{/cobrar(socioId=${socio.id})}" class="btn btn-outline-gold-soft">Cobrar próxima cuota</a>
+        <a th:href="@{/pagos/{id}/descargar-pdf(id=${pago.id})}"
+           class="btn btn-outline-gold-soft">Descargar PDF</a>
         <a th:if="${whatsappUrl != null}" th:href="${whatsappUrl}" target="_blank" rel="noopener"
            class="btn btn-outline-gold-soft">Enviar por WhatsApp</a>
         <button type="button" class="btn btn-gold-action" onclick="window.print()">Imprimir comprobante</button>
