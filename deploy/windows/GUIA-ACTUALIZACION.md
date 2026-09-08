@@ -77,7 +77,35 @@ Start-Process "http://localhost:8085"
 La primera vez que arranca con un jar nuevo tarda más de lo normal (ajusta la
 base de datos si hubo cambios de estructura; eso es automático).
 
-## Paso 6 — Verificar que cargó el jar nuevo
+## Paso 6 — Verificar el nombre del gimnasio
+
+El nombre **no está dentro del jar**: sale de `GYM_NAME` en `equinox.env`, y
+reemplazar el jar no toca ese archivo. Aun así conviene confirmarlo, porque de
+ahí sale el nombre del inicio, de los comprobantes (pantalla y PDF) y de los
+emails.
+
+```powershell
+Select-String -Path C:\ProgramData\EquinoxGym\config\equinox.env -Pattern "GYM_NAME"
+```
+
+Tiene que devolver exactamente:
+
+```text
+GYM_NAME=Keep Fit Gym
+```
+
+Si está vacío, dice otra cosa o la línea no existe, corregirlo y reiniciar:
+
+```powershell
+notepad C:\ProgramData\EquinoxGym\config\equinox.env
+# dejar la linea: GYM_NAME=Keep Fit Gym
+Restart-ScheduledTask -TaskName EquinoxGym
+```
+
+No hace falta recompilar ni volver a copiar el jar: el nombre se lee al
+arrancar.
+
+## Paso 7 — Verificar que cargó el jar nuevo
 
 No alcanza con que abra: hay que confirmar que está corriendo **la versión
 nueva**. Señales visibles según los últimos cambios:
@@ -96,6 +124,7 @@ Además, chequeo general:
 - [ ] Se puede iniciar sesión.
 - [ ] El listado de socios trae los datos de siempre (no se perdió nada).
 - [ ] Se puede registrar un cobro de prueba y anularlo después.
+- [ ] En el inicio y en un comprobante figura **Keep Fit Gym** (ver Paso 6).
 
 ## Si algo sale mal: volver atrás
 
