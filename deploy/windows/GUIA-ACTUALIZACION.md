@@ -118,6 +118,10 @@ nueva**. Señales visibles según los últimos cambios:
       **"Sin cobro"** en vez de "Vigente".
 - [ ] Al editar la fecha de inicio del plan de un socio y guardar, el
       **dashboard refleja el cambio** en "Vencen en 7 días".
+- [ ] **El arreglo que pidió el gimnasio:** buscar un socio cuya cuota venza en
+      pocos días, cobrarle la renovación **antes del vencimiento**, y confirmar
+      que en el listado de Socios la columna "Vence plan" **avanza un período**
+      (no se queda en "Faltan 3 días").
 
 Además, chequeo general:
 
