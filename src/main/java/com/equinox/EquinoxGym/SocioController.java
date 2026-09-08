@@ -257,10 +257,7 @@ public class SocioController {
                     pagoInicial = cobroService.registrarPago(cuotaInicial, montoACobrar, medioPagoInicial);
                 }
             } else {
-                socioGuardado.setPlan(planSeleccionado);
-                socioGuardado.setFechaInicioPlan(inicio);
-                socioGuardado.setFechaVencimientoPlan(inicio.plusMonths(planSeleccionado.getDuracionMeses()));
-                socioRepository.save(socioGuardado);
+                cobroService.reprogramarPlan(socioGuardado, planSeleccionado, inicio);
             }
         } else {
             socioGuardado.setPlan(null);

@@ -127,6 +127,15 @@ public class Socio {
         return cuotas != null && !cuotas.isEmpty();
     }
 
+    /**
+     * Si nunca se le registro un pago, el socio no puede mostrarse igual que
+     * uno al dia: sin esto, el que se dio de alta sin cobrar quedaba "Vigente"
+     * en verde durante todo el primer periodo, indistinguible del que pago.
+     */
+    public boolean tienePagosRegistrados() {
+        return cuotas != null && cuotas.stream().anyMatch(c -> c.getFechaPago() != null);
+    }
+
     public Long getDiasRestantesPlan() {
         if (fechaVencimientoPlan == null) {
             return null;

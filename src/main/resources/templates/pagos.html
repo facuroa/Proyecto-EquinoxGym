@@ -132,14 +132,14 @@
                                 <td th:text="${primerElemento + iterStat.count}">1</td>
                                 <td th:text="${pago.cuota != null and pago.cuota.socio != null ? pago.cuota.socio.nombreCompleto : 'Sin socio'}">Sin socio</td>
                                 <td th:text="${pago.cuota != null and pago.cuota.socio != null ? pago.cuota.socio.dni : '-'}">-</td>
-                                <td th:text="${pago.fechaPago}">2026-03-26</td>
+                                <td th:text="${pago.fechaPago != null ? #temporals.format(pago.fechaPago, 'dd/MM/yyyy') : '-'}">26/03/2026</td>
                                 <td th:text="${'$ ' + pago.monto}">$ 0</td>
                                 <td>
                                     <span class="status-badge status-badge-info" th:text="${pago.medioPago}">Efectivo</span>
                                 </td>
                                 <td>
                                     <strong th:text="${pago.registradoPor != null ? pago.registradoPor : 'Registro anterior'}">usuario</strong>
-                                    <small class="premium-help-text" th:if="${pago.fechaRegistro != null}" th:text="${pago.fechaRegistro}">-</small>
+                                    <small class="premium-help-text" th:if="${pago.fechaRegistro != null}" th:text="${#temporals.format(pago.fechaRegistro, 'dd/MM/yyyy HH:mm')}">-</small>
                                 </td>
                                 <td>
                                     <span th:unless="${pago.anulado}" class="status-badge status-badge-success">Confirmado</span>

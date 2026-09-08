@@ -111,7 +111,7 @@
                                 <td>
                                     <span th:if="${#lists.isEmpty(socio.cuotas)}">-</span>
                                     <span th:unless="${#lists.isEmpty(socio.cuotas)}">
-                                        <span th:text="${socio.fechaVencimientoPlan != null ? socio.fechaVencimientoPlan : '-'}">-</span><br>
+                                        <span th:text="${socio.fechaVencimientoPlan != null ? #temporals.format(socio.fechaVencimientoPlan, 'dd/MM/yyyy') : '-'}">-</span><br>
                                         <small class="premium-help-text" th:text="${socio.textoVencimientoPlan}">Faltan días</small>
                                     </span>
                                 </td>
@@ -124,7 +124,13 @@
                                         <span th:if="${!#lists.isEmpty(impagas)}"
                                               th:with="tieneVencida=${!#lists.isEmpty(impagas.?[estado != null and estado.name() == 'VENCIDA'])}">
                                             <span th:if="${tieneVencida}" class="status-badge status-badge-danger">Vencida</span>
-                                            <span th:unless="${tieneVencida}" class="status-badge status-badge-success">Vigente</span>
+                                            <span th:unless="${tieneVencida}">
+                                                <span th:if="${socio.tienePagosRegistrados()}"
+                                                      class="status-badge status-badge-success">Vigente</span>
+                                                <span th:unless="${socio.tienePagosRegistrados()}"
+                                                      class="status-badge status-badge-warning"
+                                                      title="El plan está vigente pero todavía no se registró ningún cobro de este socio.">Sin cobro</span>
+                                            </span>
                                         </span>
                                     </span>
                                 </td>

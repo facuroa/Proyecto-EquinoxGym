@@ -172,6 +172,43 @@ public class CobroService {
         return cuotaRepository.save(primeraCuota);
     }
 
+    /**
+     * Cambia el plan o la fecha de inicio de un socio que ya tiene cuotas.
+     *
+     * Mueve tambien la proxima cuota impaga: sin esto el socio quedaba con una
+     * fecha de vencimiento en su ficha y otra distinta en el listado de cuotas,
+     * y el dashboard (que cuenta cuotas, no socios) no reflejaba la edicion.
+     * Las cuotas ya pagadas no se tocan: son historial.
+     */
+    public void reprogramarPlan(Socio socio, Plan plan, LocalDate fechaInicio) {
+        validarAsignacionPlan(socio, plan);
+
+        LocalDate inicio = (fechaInicio != null) ? fechaInicio : LocalDate.now();
+        LocalDate vencimiento = inicio.plusMonths(plan.getDuracionMeses());
+
+        socio.setPlan(plan);
+        socio.setFechaInicioPlan(inicio);
+        socio.setFechaVencimientoPlan(vencimiento);
+
+        // Se busca por repositorio y no sobre socio.getCuotas(): la coleccion en
+        // memoria puede venir desactualizada y la reprogramacion quedaria en nada
+        // sin avisar.
+        if (socio.getId() != null) {
+            List<Cuota> impagas = cuotaRepository
+                    .findBySocio_IdAndFechaPagoIsNullOrderByFechaVencimientoAsc(socio.getId());
+            if (!impagas.isEmpty()) {
+                Cuota proxima = impagas.get(0);
+                proxima.setFechaVencimiento(vencimiento);
+                proxima.setMonto(plan.getPrecio());
+                cuotaService.actualizarEstadoCuota(proxima);
+                cuotaRepository.save(proxima);
+            }
+        }
+
+        socioService.actualizarEstadoSocio(socio);
+        socioRepository.save(socio);
+    }
+
     private Cuota asignarPlanYCrearPrimeraCuota(Socio socio,
                                                 Plan plan,
                                                 LocalDate fechaInicio,

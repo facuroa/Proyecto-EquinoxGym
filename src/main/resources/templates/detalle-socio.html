@@ -50,7 +50,7 @@
                     <div class="metric-card">
                         <span class="metric-label">Último pago</span>
                         <div class="metric-value financial-metric-value"
-                             th:text="${ultimoPago != null ? ultimoPago.fechaPago : 'Sin pagos'}">Sin pagos</div>
+                             th:text="${ultimoPago != null ? #temporals.format(ultimoPago.fechaPago, 'dd/MM/yyyy') : 'Sin pagos'}">Sin pagos</div>
                         <small class="premium-help-text" th:if="${ultimoPago != null}"
                                th:text="${ultimoPago.medioPago + ' · $ ' + ultimoPago.monto}">-</small>
                     </div>
@@ -59,7 +59,7 @@
                     <div class="metric-card">
                         <span class="metric-label">Próximo vencimiento</span>
                         <div class="metric-value financial-metric-value"
-                             th:text="${proximaCuota != null ? proximaCuota.fechaVencimiento : 'Al día'}">Al día</div>
+                             th:text="${proximaCuota != null ? #temporals.format(proximaCuota.fechaVencimiento, 'dd/MM/yyyy') : 'Al día'}">Al día</div>
                         <small class="premium-help-text" th:if="${proximaCuota != null}" th:text="${proximaCuota.textoVencimiento}">-</small>
                     </div>
                 </div>
@@ -86,7 +86,7 @@
                                 </div>
                                 <div class="socio-detail-item">
                                     <span class="metric-label">Fecha de nacimiento</span>
-                                    <strong th:text="${socio.fechaNacimiento != null ? socio.fechaNacimiento : 'No registrada'}">-</strong>
+                                    <strong th:text="${socio.fechaNacimiento != null ? #temporals.format(socio.fechaNacimiento, 'dd/MM/yyyy') : 'No registrada'}">-</strong>
                                 </div>
                                 <div class="socio-detail-item">
                                     <span class="metric-label">Teléfono</span>
@@ -119,11 +119,11 @@
                                 </div>
                                 <div class="socio-detail-item">
                                     <span class="metric-label">Inicio de vigencia</span>
-                                    <strong th:text="${socio.fechaInicioPlan != null ? socio.fechaInicioPlan : '-'}">-</strong>
+                                    <strong th:text="${socio.fechaInicioPlan != null ? #temporals.format(socio.fechaInicioPlan, 'dd/MM/yyyy') : '-'}">-</strong>
                                 </div>
                                 <div class="socio-detail-item">
                                     <span class="metric-label">Vencimiento</span>
-                                    <strong th:text="${socio.fechaVencimientoPlan != null ? socio.fechaVencimientoPlan : '-'}">-</strong>
+                                    <strong th:text="${socio.fechaVencimientoPlan != null ? #temporals.format(socio.fechaVencimientoPlan, 'dd/MM/yyyy') : '-'}">-</strong>
                                     <small class="premium-help-text" th:text="${socio.textoVencimientoPlan}">-</small>
                                 </div>
                                 <div>
@@ -191,8 +191,8 @@
                             <td colspan="4" class="text-center py-5 empty-state-cell">Este socio todavía no tiene cuotas.</td>
                         </tr>
                         <tr th:each="cuota : ${cuotasOrdenadas}">
-                            <td th:text="${cuota.fechaVencimiento}">-</td>
-                            <td th:text="${cuota.fechaPago != null ? cuota.fechaPago : '-'}">-</td>
+                            <td th:text="${cuota.fechaVencimiento != null ? #temporals.format(cuota.fechaVencimiento, 'dd/MM/yyyy') : '-'}">-</td>
+                            <td th:text="${cuota.fechaPago != null ? #temporals.format(cuota.fechaPago, 'dd/MM/yyyy') : '-'}">-</td>
                             <td th:text="${'$ ' + cuota.monto}">$ 0</td>
                             <td>
                                 <span th:if="${cuota.estado != null and cuota.estado.name() == 'PAGADA'}" class="status-badge status-badge-success">Pagada</span>
@@ -234,7 +234,7 @@
                         </tr>
                         <tr th:each="pago : ${pagosRecientes}" th:classappend="${pago.anulado} ? 'pago-anulado'">
                             <td><strong th:text="${pago.numeroComprobante}">EQX-00000001</strong></td>
-                            <td th:text="${pago.fechaPago}">-</td>
+                            <td th:text="${pago.fechaPago != null ? #temporals.format(pago.fechaPago, 'dd/MM/yyyy') : '-'}">-</td>
                             <td th:text="${'$ ' + pago.monto}">$ 0</td>
                             <td th:text="${pago.medioPago}">-</td>
                             <td th:text="${pago.registradoPor != null ? pago.registradoPor : 'Registro anterior'}">-</td>

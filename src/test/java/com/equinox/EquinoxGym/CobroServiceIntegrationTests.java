@@ -117,6 +117,46 @@ class CobroServiceIntegrationTests {
     }
 
     @Test
+    void reprogramarElPlanMueveLaCuotaImpagaJuntoConElVencimiento() {
+        Plan plan = guardarPlan("Mensual reprogramado", 1, "31000");
+        Socio socio = guardarSocio("Nadia", "95111222");
+        Cuota cuota = guardarCuota(socio, LocalDate.now().plusMonths(1), plan.getPrecio());
+        socio.setPlan(plan);
+        socioRepository.save(socio);
+
+        LocalDate nuevoInicio = LocalDate.now().minusDays(25);
+        cobroService.reprogramarPlan(socio, plan, nuevoInicio);
+
+        LocalDate nuevoVencimiento = nuevoInicio.plusMonths(1);
+        assertThat(socio.getFechaVencimientoPlan()).isEqualTo(nuevoVencimiento);
+        // La cuota tiene que quedar en la misma fecha que el plan: si no, el
+        // dashboard (que cuenta cuotas) sigue mostrando el vencimiento viejo.
+        assertThat(cuotaRepository.findById(cuota.getId()).orElseThrow().getFechaVencimiento())
+                .isEqualTo(nuevoVencimiento);
+    }
+
+    @Test
+    void reprogramarElPlanNoTocaLasCuotasYaPagadas() {
+        Plan plan = guardarPlan("Mensual con historial", 1, "33000");
+        Socio socio = guardarSocio("Bruno", "96111222");
+        LocalDate vencimientoPagado = LocalDate.now().minusMonths(1);
+        Cuota pagada = guardarCuota(socio, vencimientoPagado, plan.getPrecio());
+        pagada.setFechaPago(vencimientoPagado);
+        pagada.setEstado(EstadoCuota.PAGADA);
+        cuotaRepository.save(pagada);
+        Cuota pendiente = guardarCuota(socio, LocalDate.now().plusDays(3), plan.getPrecio());
+        socio.setPlan(plan);
+        socioRepository.save(socio);
+
+        cobroService.reprogramarPlan(socio, plan, LocalDate.now());
+
+        assertThat(cuotaRepository.findById(pagada.getId()).orElseThrow().getFechaVencimiento())
+                .isEqualTo(vencimientoPagado);
+        assertThat(cuotaRepository.findById(pendiente.getId()).orElseThrow().getFechaVencimiento())
+                .isEqualTo(LocalDate.now().plusMonths(1));
+    }
+
+    @Test
     void noPermiteAsignarUnPlanInactivo() {
         Plan plan = guardarPlan("Plan discontinuado", 1, "20000");
         plan.setActivo(false);

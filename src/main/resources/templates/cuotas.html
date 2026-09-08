@@ -113,11 +113,11 @@
                             <tr th:each="cuota, iterStat : ${cuotas}">
                                 <td th:text="${primerElemento + iterStat.count}">1</td>
                                 <td th:text="${cuota.socio != null ? cuota.socio.nombreCompleto : 'Sin socio'}">Socio</td>
-                                <td th:text="${cuota.fechaVencimiento}">2026-03-26</td>
+                                <td th:text="${cuota.fechaVencimiento != null ? #temporals.format(cuota.fechaVencimiento, 'dd/MM/yyyy') : '-'}">26/03/2026</td>
                                 <td>
                                     <span th:text="${cuota.textoVencimiento}">Faltan días</span>
                                 </td>
-                                <td th:text="${cuota.fechaPago != null ? cuota.fechaPago : '-'}">-</td>
+                                <td th:text="${cuota.fechaPago != null ? #temporals.format(cuota.fechaPago, 'dd/MM/yyyy') : '-'}">-</td>
                                 <td th:text="${'$ ' + cuota.monto}">$ 0</td>
                                 <td>
                                     <span th:if="${cuota.estado == T(com.equinox.EquinoxGym.EstadoCuota).PENDIENTE}"

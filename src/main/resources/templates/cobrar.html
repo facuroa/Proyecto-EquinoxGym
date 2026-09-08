@@ -216,8 +216,8 @@
                         </div>
                         <div class="cobro-info-item">
                             <span class="metric-label">Próximo vencimiento</span>
-                            <strong th:if="${cuotaPendiente != null}" th:text="${cuotaPendiente.fechaVencimiento}">-</strong>
-                            <strong th:if="${cuotaPendiente == null and socio.tieneCuotas()}" th:text="${socio.fechaVencimientoPlan != null ? socio.fechaVencimientoPlan : '-'}">-</strong>
+                            <strong th:if="${cuotaPendiente != null}" th:text="${cuotaPendiente.fechaVencimiento != null ? #temporals.format(cuotaPendiente.fechaVencimiento, 'dd/MM/yyyy') : '-'}">-</strong>
+                            <strong th:if="${cuotaPendiente == null and socio.tieneCuotas()}" th:text="${socio.fechaVencimientoPlan != null ? #temporals.format(socio.fechaVencimientoPlan, 'dd/MM/yyyy') : '-'}">-</strong>
                             <strong th:if="${cuotaPendiente == null and !socio.tieneCuotas()}">-</strong>
                             <br>
                             <small class="premium-help-text" th:if="${cuotaPendiente != null}" th:text="${cuotaPendiente.textoVencimiento}">Faltan días</small>
@@ -293,7 +293,7 @@
                         <div class="cobro-cuota-resumen">
                             <div>
                                 <span class="metric-label">Vencimiento</span>
-                                <strong th:text="${cuotaPendiente.fechaVencimiento}">-</strong><br>
+                                <strong th:text="${cuotaPendiente.fechaVencimiento != null ? #temporals.format(cuotaPendiente.fechaVencimiento, 'dd/MM/yyyy') : '-'}">-</strong><br>
                                 <small class="premium-help-text" th:text="${cuotaPendiente.textoVencimiento}">Faltan días</small>
                             </div>
                             <div>
