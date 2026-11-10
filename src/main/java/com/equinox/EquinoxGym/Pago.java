@@ -124,7 +124,23 @@ public class Pago {
     public String getMotivoAnulacion() { return motivoAnulacion; }
     public void setMotivoAnulacion(String motivoAnulacion) { this.motivoAnulacion = motivoAnulacion; }
 
+    /**
+     * Prefijo de los numeros de comprobante. Cada instalacion pone el suyo con
+     * COMPROBANTE_PREFIJO en equinox.env; lo fija ComprobanteNumeracion al
+     * arrancar. Es estatico porque getNumeroComprobante() se usa desde las
+     * plantillas sobre la entidad, que no pasa por el contenedor de Spring.
+     */
+    private static String prefijoComprobante = "EQX";
+
+    static void configurarPrefijo(String prefijo) {
+        if (prefijo != null && !prefijo.isBlank()) {
+            prefijoComprobante = prefijo.trim();
+        }
+    }
+
     public String getNumeroComprobante() {
-        return id == null ? "EQX-PENDIENTE" : String.format("EQX-%08d", id);
+        return id == null
+                ? prefijoComprobante + "-PENDIENTE"
+                : String.format("%s-%08d", prefijoComprobante, id);
     }
 }
