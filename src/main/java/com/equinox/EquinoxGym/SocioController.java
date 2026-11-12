@@ -31,6 +31,8 @@ public class SocioController {
     private final PlanRepository planRepository;
     private final PagoRepository pagoRepository;
     private final SeguimientoMorosidadRepository seguimientoMorosidadRepository;
+    private final AsistenciaRepository asistenciaRepository;
+    private final AsistenciaService asistenciaService;
     private final SocioService socioService;
     private final CobroService cobroService;
 
@@ -38,12 +40,16 @@ public class SocioController {
                            PlanRepository planRepository,
                            PagoRepository pagoRepository,
                            SeguimientoMorosidadRepository seguimientoMorosidadRepository,
+                           AsistenciaRepository asistenciaRepository,
+                           AsistenciaService asistenciaService,
                            SocioService socioService,
                            CobroService cobroService) {
         this.socioRepository = socioRepository;
         this.planRepository = planRepository;
         this.pagoRepository = pagoRepository;
         this.seguimientoMorosidadRepository = seguimientoMorosidadRepository;
+        this.asistenciaRepository = asistenciaRepository;
+        this.asistenciaService = asistenciaService;
         this.socioService = socioService;
         this.cobroService = cobroService;
     }
@@ -141,6 +147,7 @@ public class SocioController {
                 .min(Comparator.comparing(Cuota::getFechaVencimiento,
                         Comparator.nullsLast(Comparator.naturalOrder())))
                 .orElse(null));
+        model.addAttribute("resumenAsistencia", asistenciaService.resumenDeSocio(socio));
         return "detalle-socio";
     }
 
@@ -289,6 +296,7 @@ public class SocioController {
                 return "redirect:/socios";
             }
             seguimientoMorosidadRepository.deleteBySocio_Id(socio.getId());
+            asistenciaRepository.deleteBySocio_Id(socio.getId());
             socioRepository.delete(socio);
             redirectAttributes.addFlashAttribute("mensaje",
                     "Se eliminó a " + socio.getNombre() + " " + socio.getApellido() + ".");

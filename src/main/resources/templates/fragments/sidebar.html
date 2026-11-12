@@ -31,6 +31,10 @@
                th:classappend="${activeLink == 'socios'} ? ' active'"
                class="sidebar-link">Socios</a>
 
+            <a th:href="@{/asistencia}"
+               th:classappend="${activeLink == 'asistencia'} ? ' active'"
+               class="sidebar-link">Asistencia</a>
+
             <a th:href="@{/morosidad}"
                th:classappend="${activeLink == 'morosidad'} ? ' active'"
                class="sidebar-link">Morosidad</a>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${'Asistencia - ' + gymName}">Asistencia - Gym System</title>
+    <link rel="stylesheet" th:href="@{/vendor/bootstrap/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body class="dashboard-body">
+<div class="dashboard-wrapper">
+    <aside th:replace="~{fragments/sidebar :: sidebar('asistencia')}"></aside>
+
+    <main class="main-content">
+        <div th:replace="~{fragments/toast :: toast('success', ${mensaje})}"></div>
+        <div th:replace="~{fragments/toast :: toast('error', ${error})}"></div>
+
+        <header class="topbar">
+            <div>
+                <p class="topbar-label">Control de ingresos</p>
+                <h1 class="topbar-title">Asistencia</h1>
+                <p class="topbar-subtitle">Registrá quién entra y mirá el estado de su cuota en el momento.</p>
+            </div>
+            <div class="topbar-status">
+                <span>Ingresos de hoy</span>
+                <strong th:text="${hoy.total == 1 ? '1 ingreso' : hoy.total + ' ingresos'}">0 ingresos</strong>
+            </div>
+        </header>
+
+        <nav th:replace="~{fragments/asistencia :: solapas('hoy')}"></nav>
+
+        <!-- Respuesta al último registro. Va arriba del buscador para que quede
+             a la vista sin tener que bajar, incluso en pantallas chicas. -->
+        <section th:if="${ingreso != null}" id="respuestaIngreso" class="asistencia-respuesta"
+                 th:classappend="${' is-' + ingreso.tono}" role="status" aria-live="polite">
+            <div class="asistencia-respuesta-cuerpo">
+                <p class="asistencia-respuesta-titulo" th:switch="${ingreso.resultado.name()}">
+                    <span th:case="'REGISTRADO'"
+                          th:text="${ingreso.segundoTurno ? 'Segundo turno registrado · ' + ingreso.hora : 'Ingreso registrado · ' + ingreso.hora}">Ingreso registrado</span>
+                    <span th:case="'YA_REGISTRADO'">Ya ingresó hoy</span>
+                    <span th:case="'LIMITE_DIARIO'">No se registró el ingreso</span>
+                </p>
+                <h2 th:text="${ingreso.nombreCompleto}">Socio</h2>
+                <div class="asistencia-respuesta-detalle">
+                    <span th:replace="~{fragments/asistencia :: estado(${ingreso.estado})}"></span>
+                    <span th:text="${'DNI ' + ingreso.dni}">DNI</span>
+                    <strong th:text="${ingreso.textoCuota}">Cuota</strong>
+                </div>
+                <p class="asistencia-respuesta-nota" th:if="${ingreso.registrado and ingreso.conDeuda}">
+                    El ingreso quedó registrado igual. Aprovechá que está en el mostrador para regularizar la cuota.
+                </p>
+                <p class="asistencia-respuesta-nota" th:if="${ingreso.resultado.name() == 'YA_REGISTRADO'}"
+                   th:text="${'Registró un ingreso a las ' + ingreso.horaIngresoAnterior + '. Si viene a un segundo turno, registralo con el botón.'}">
+                    Ya registró un ingreso hoy.
+                </p>
+                <p class="asistencia-respuesta-nota" th:if="${ingreso.resultado.name() == 'LIMITE_DIARIO'}"
+                   th:text="${'Ya tiene ' + ingreso.maximoPorDia + ' ingresos hoy, el último a las ' + ingreso.horaIngresoAnterior + '. Es el máximo por día.'}">
+                    Ya tiene el máximo de ingresos por día.
+                </p>
+            </div>
+            <div class="asistencia-respuesta-acciones">
+                <a th:if="${ingreso.registrado and ingreso.conDeuda}"
+                   th:href="@{/cobrar(socioId=${ingreso.socioId})}" class="btn btn-gold-action">Cobrar ahora</a>
+                <form th:if="${ingreso.resultado.name() == 'YA_REGISTRADO'}"
+                      th:action="@{/asistencia/registrar}" method="post" class="m-0" data-envio-unico>
+                    <input type="hidden" name="socioId" th:value="${ingreso.socioId}">
+                    <input type="hidden" name="forzar" value="true">
+                    <button type="submit" class="btn btn-gold-action">Registrar segundo turno</button>
+                </form>
+                <a th:href="@{/socios/ver/{id}(id=${ingreso.socioId})}" class="btn btn-outline-gold-soft">Ver ficha</a>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <div class="premium-form-card cobro-search-card">
+                <div class="premium-form-header">
+                    <h3>Registrar ingreso</h3>
+                    <span>Escribí nombre, apellido o DNI y apretá Enter</span>
+                </div>
+                <div class="premium-form-body">
+                    <div class="cobro-buscador-wrapper">
+                        <input type="text"
+                               id="buscarSocioAsistencia"
+                               class="form-control premium-input"
+                               placeholder="Ej: Juan Pérez o 38241001"
+                               autocomplete="off"
+                               th:autofocus="${ingreso == null}"
+                               role="combobox"
+                               aria-label="Buscar socio para registrar su ingreso"
+                               aria-controls="resultadosAsistencia"
+                               aria-expanded="false"
+                               th:attr="data-buscar-url=@{/asistencia/buscar}">
+                        <div id="resultadosAsistencia" class="cobro-resultados-dropdown" role="listbox"></div>
+                    </div>
+                    <form id="formIngreso" th:action="@{/asistencia/registrar}" method="post" hidden>
+                        <input type="hidden" name="socioId" id="ingresoSocioId">
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section class="row g-4">
+            <div class="col-xl-8">
+                <div class="premium-table-card h-100">
+                    <div class="premium-table-header">
+                        <div>
+                            <h3>Ingresos de hoy</h3>
+                            <span th:text="${#temporals.format(#temporals.createToday(), 'dd/MM/yyyy') + ' · ' + (hoy.total == 1 ? '1 registro' : hoy.total + ' registros') + (hoy.sociosConDeuda > 0 ? ' · ' + hoy.sociosConDeuda + ' con cuota vencida' : '')}">0 registros</span>
+                        </div>
+                    </div>
+
+                    <div th:if="${#lists.isEmpty(hoy.ingresos)}" class="morosidad-empty">
+                        <strong>Todavía no ingresó nadie hoy.</strong>
+                        <span>Buscá un socio arriba para registrar el primer ingreso.</span>
+                    </div>
+
+                    <div th:unless="${#lists.isEmpty(hoy.ingresos)}" class="table-responsive">
+                        <table class="table premium-table asistencia-table align-middle mb-0">
+                            <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>Socio</th>
+                                <th>Estado</th>
+                                <th>Franja</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="fila : ${hoy.ingresos}">
+                                <td th:text="${fila.hora}">10:30</td>
+                                <td>
+                                    <div class="asistencia-socio">
+                                        <strong th:text="${fila.nombreCompleto}">Socio</strong>
+                                        <span th:text="${'DNI ' + fila.dni}">DNI</span>
+                                    </div>
+                                </td>
+                                <td><span th:replace="~{fragments/asistencia :: estado(${fila.estado})}"></span></td>
+                                <td>
+                                    <div class="asistencia-socio">
+                                        <strong th:text="${fila.franja}">19:00</strong>
+                                        <span th:if="${fila.segundoTurno}">Segundo turno</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="action-buttons-premium">
+                                        <a th:if="${fila.conDeuda}" th:href="@{/cobrar(socioId=${fila.socioId})}"
+                                           class="btn btn-gold-search btn-sm"
+                                           th:aria-label="${'Cobrar a ' + fila.nombreCompleto}">Cobrar</a>
+                                        <a th:href="@{/socios/ver/{id}(id=${fila.socioId})}"
+                                           class="btn btn-outline-gold-soft btn-sm"
+                                           th:aria-label="${'Ver ficha de ' + fila.nombreCompleto}">Ficha</a>
+                                        <a th:href="@{/asistencia/{id}/quitar(id=${fila.id})}"
+                                           class="btn btn-delete-premium btn-sm"
+                                           data-confirm-delete
+                                           data-titulo="Quitar ingreso"
+                                           data-confirmar="Sí, quitar"
+                                           th:attr="data-mensaje=${'¿Quitar el ingreso de ' + fila.nombreCompleto + ' de las ' + fila.hora + '? Usalo solo si se cargó por error.'},aria-label=${'Quitar el ingreso de ' + fila.nombreCompleto}">Quitar</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-4">
+                <div class="premium-table-card h-100">
+                    <div class="premium-table-header">
+                        <div>
+                            <h3>Ingresos por franja</h3>
+                            <span>Solo el día de hoy</span>
+                        </div>
+                    </div>
+
+                    <div th:if="${#lists.isEmpty(hoy.franjas)}" class="cash-empty-state">
+                        Las franjas aparecen con el primer ingreso.
+                    </div>
+
+                    <div th:unless="${#lists.isEmpty(hoy.franjas)}" class="asistencia-franjas">
+                        <div class="asistencia-franja" th:each="franja : ${hoy.franjas}"
+                             th:classappend="${franja.pico} ? ' is-pico'">
+                            <span class="asistencia-franja-hora" th:text="${franja.hora}">19:00</span>
+                            <span class="asistencia-franja-riel">
+                                <span class="asistencia-franja-barra" th:style="${'width: ' + franja.porcentaje + '%'}"></span>
+                            </span>
+                            <strong th:text="${franja.cantidad}">0</strong>
+                        </div>
+                    </div>
+
+                    <p class="asistencia-nota">
+                        Un día suelto no alcanza para decidir cupos. La semana típica está en el
+                        <a th:href="@{/asistencia/historial}">Historial</a>.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div th:replace="~{fragments/confirm-delete-modal :: confirmDeleteModal}"></div>
+
+<script th:src="@{/vendor/bootstrap/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/confirm-delete.js}"></script>
+<script th:src="@{/js/asistencia.js}"></script>
+</body>
+</html>

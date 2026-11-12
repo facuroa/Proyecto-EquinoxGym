@@ -13,6 +13,8 @@ public interface SocioRepository extends JpaRepository<Socio, Long> {
 
     Optional<Socio> findByDni(String dni);
 
+    List<Socio> findByEstadoAndBajaFalse(EstadoSocio estado);
+
     List<Socio> findByNombreContainingIgnoreCaseOrApellidoContainingIgnoreCaseOrDniContainingIgnoreCase(
             String nombre, String apellido, String dni);
 

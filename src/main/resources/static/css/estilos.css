@@ -2369,7 +2369,7 @@ a {
 }
 
 .morosidad-empty strong {
-    color: var(--text-primary);
+    color: var(--text-main);
     font-size: 1.05rem;
 }
 
@@ -3243,5 +3243,532 @@ a {
         color: #9d1625 !important;
         background: #fff0f2 !important;
         border-color: #d88b94;
+    }
+}
+
+/* =========================
+   ASISTENCIA
+========================= */
+
+/* Solapas para dividir una pantalla en secciones. */
+.page-tabs {
+    display: flex;
+    gap: 0.35rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.page-tab {
+    margin-bottom: -1px;
+    padding: 0.7rem 1.1rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    border-bottom: 2px solid transparent;
+    transition: var(--transition);
+}
+
+.page-tab:hover {
+    color: var(--text-main);
+}
+
+.page-tab.active {
+    color: var(--gold-soft);
+    border-bottom-color: var(--gold);
+}
+
+/* Selector de una opcion entre pocas (periodo, umbral). */
+.segmented-control {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.segmented-option {
+    padding: 0.42rem 0.8rem;
+    border-radius: 9px;
+    color: var(--text-soft);
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: var(--transition);
+}
+
+.segmented-option:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.segmented-option.active,
+.segmented-option.active:hover {
+    color: #14161a;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-soft) 100%);
+}
+
+.asistencia-header-con-controles {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.9rem 1rem;
+}
+
+/* Respuesta al ultimo ingreso registrado. */
+.asistencia-respuesta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.1rem 1.5rem;
+    margin-bottom: 1rem;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--border-color);
+    border-left-width: 6px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-main);
+    scroll-margin-top: 1rem;
+}
+
+.asistencia-respuesta.is-ok {
+    border-color: rgba(25, 135, 84, 0.38);
+    border-left-color: #3ecf8e;
+    background: linear-gradient(90deg, rgba(25, 135, 84, 0.2) 0%, rgba(27, 29, 34, 0.98) 62%);
+}
+
+.asistencia-respuesta.is-aviso {
+    border-color: rgba(255, 193, 7, 0.36);
+    border-left-color: #ffc107;
+    background: linear-gradient(90deg, rgba(255, 193, 7, 0.17) 0%, rgba(27, 29, 34, 0.98) 62%);
+}
+
+.asistencia-respuesta.is-repetido {
+    border-color: rgba(59, 130, 246, 0.38);
+    border-left-color: #60a5fa;
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.18) 0%, rgba(27, 29, 34, 0.98) 62%);
+}
+
+.asistencia-respuesta-cuerpo {
+    flex: 1 1 320px;
+    min-width: 0;
+}
+
+.asistencia-respuesta-titulo {
+    margin: 0 0 0.3rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+.is-ok .asistencia-respuesta-titulo {
+    color: #7ee2b8;
+}
+
+.is-aviso .asistencia-respuesta-titulo {
+    color: #f7d774;
+}
+
+.is-repetido .asistencia-respuesta-titulo {
+    color: #93c5fd;
+}
+
+.asistencia-respuesta h2 {
+    margin: 0;
+    color: var(--text-main);
+    font-size: 1.75rem;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+.asistencia-respuesta-detalle {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.9rem;
+    margin-top: 0.6rem;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+}
+
+.asistencia-respuesta-detalle strong {
+    color: var(--text-main);
+}
+
+.asistencia-respuesta-nota {
+    margin: 0.65rem 0 0;
+    color: var(--text-soft);
+    font-size: 0.92rem;
+}
+
+.asistencia-respuesta-acciones {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+/* Resultados del buscador: son botones porque registran, no navegan. */
+.asistencia-resultado {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.cobro-resultado-item.is-active {
+    background: rgba(212, 175, 55, 0.12);
+}
+
+/* Tablas de la pantalla. */
+.asistencia-socio {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.asistencia-socio strong {
+    color: var(--text-main);
+}
+
+.asistencia-socio span {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+}
+
+.asistencia-table tbody tr.is-elegida td {
+    background: rgba(212, 175, 55, 0.07);
+}
+
+.asistencia-alerta {
+    color: #f7d774 !important;
+}
+
+.asistencia-nota {
+    margin: 0;
+    padding: 0.9rem 1.5rem 1.1rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.asistencia-nota a {
+    color: var(--gold-soft);
+    font-weight: 700;
+}
+
+/* Ingresos por franja del dia. */
+.asistencia-franjas {
+    display: grid;
+    gap: 0.7rem;
+    padding: 1.25rem 1.5rem;
+}
+
+.asistencia-franja {
+    display: grid;
+    grid-template-columns: 3.2rem minmax(0, 1fr) 2rem;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.asistencia-franja-riel {
+    display: block;
+    height: 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+}
+
+.asistencia-franja-barra {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--gold-dark), var(--gold-soft));
+}
+
+.asistencia-franja strong {
+    color: var(--text-main);
+    text-align: right;
+}
+
+.asistencia-franja.is-pico strong {
+    color: var(--gold-soft);
+}
+
+/* Periodo elegido a mano. */
+.asistencia-rango {
+    display: flex;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.asistencia-rango .payment-filter-field {
+    flex: 0 1 190px;
+}
+
+.asistencia-rango .premium-input {
+    color-scheme: dark;
+}
+
+/* Grilla de la semana tipica. */
+.asistencia-grilla-caja {
+    padding: 1.1rem 1.5rem 0.4rem;
+}
+
+.asistencia-grilla {
+    width: 100%;
+    min-width: 460px;
+    border-collapse: separate;
+    border-spacing: 4px;
+    font-variant-numeric: tabular-nums;
+}
+
+.asistencia-grilla thead th {
+    padding: 0.3rem 0.4rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.asistencia-grilla tbody th {
+    width: 3.6rem;
+    padding-right: 0.6rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.asistencia-celda {
+    padding: 0.55rem 0.3rem;
+    border-radius: 8px;
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.asistencia-celda.nivel-0 {
+    color: rgba(255, 255, 255, 0.22);
+}
+
+.asistencia-celda.nivel-1 {
+    background: rgba(212, 175, 55, 0.1);
+}
+
+.asistencia-celda.nivel-2 {
+    background: rgba(212, 175, 55, 0.22);
+}
+
+.asistencia-celda.nivel-3 {
+    background: rgba(212, 175, 55, 0.38);
+    font-weight: 700;
+}
+
+.asistencia-celda.nivel-4 {
+    background: rgba(212, 175, 55, 0.78);
+    color: #14161a;
+    font-weight: 800;
+}
+
+.asistencia-celda.supera-cupo {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-soft) 100%);
+    color: #14161a;
+    font-weight: 800;
+    box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.6);
+}
+
+.asistencia-leyenda {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 1.5rem 0.9rem;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+}
+
+.asistencia-leyenda-escala {
+    display: inline-flex;
+    gap: 3px;
+}
+
+.asistencia-leyenda .asistencia-celda {
+    display: inline-block;
+    width: 22px;
+    height: 12px;
+    padding: 0;
+    border-radius: 3px;
+}
+
+.asistencia-conclusion,
+.asistencia-aviso {
+    margin: 0 1.5rem 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-md);
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.asistencia-conclusion {
+    background: rgba(212, 175, 55, 0.08);
+    border: 1px solid rgba(212, 175, 55, 0.22);
+}
+
+.asistencia-conclusion strong {
+    color: var(--gold-soft);
+}
+
+.asistencia-aviso {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.26);
+}
+
+.asistencia-aviso strong {
+    color: #93c5fd;
+}
+
+/* Ficha de asistencia de un socio. */
+.asistencia-ficha {
+    display: grid;
+    gap: 1.1rem;
+}
+
+.asistencia-ficha-datos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+}
+
+.asistencia-semanas {
+    display: grid;
+    gap: 5px;
+    max-width: 420px;
+}
+
+.asistencia-semana {
+    display: grid;
+    grid-template-columns: 3.2rem repeat(7, minmax(0, 1fr));
+    align-items: center;
+    gap: 5px;
+}
+
+.asistencia-semana-cabecera span {
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-align: center;
+}
+
+.asistencia-semana-fecha {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.asistencia-dia {
+    display: block;
+    height: 18px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.asistencia-dia.is-vino {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-soft) 100%);
+}
+
+.asistencia-dia.is-futuro {
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.asistencia-ficha-panel {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.asistencia-ficha-contacto {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+.asistencia-ficha-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.asistencia-ficha-acciones .btn {
+    flex: 1 1 auto;
+}
+
+/* Botones dorados y de contorno juntos: cada clase trae su propio padding y
+   borde, asi que lado a lado quedaban de distinta altura y con el texto
+   corrido. Se iguala la forma y cada clase aporta solo el color. */
+.asistencia-respuesta-acciones .btn,
+.asistencia-ficha-acciones .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.9rem;
+    padding: 0.6rem 1.1rem;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    line-height: 1.2;
+}
+
+.asistencia-respuesta-acciones .btn-outline-gold-soft,
+.asistencia-ficha-acciones .btn-outline-gold-soft {
+    border-color: rgba(212, 175, 55, 0.30);
+}
+
+@media (max-width: 576px) {
+    .page-tab {
+        padding: 0.6rem 0.8rem;
+    }
+
+    .asistencia-respuesta {
+        padding: 1rem 1.1rem;
+    }
+
+    .asistencia-respuesta h2 {
+        font-size: 1.4rem;
+    }
+
+    .asistencia-respuesta-acciones,
+    .asistencia-respuesta-acciones form,
+    .asistencia-respuesta-acciones .btn {
+        width: 100%;
+    }
+
+    .asistencia-grilla-caja,
+    .asistencia-franjas,
+    .asistencia-ficha-panel {
+        padding-left: 1.1rem;
+        padding-right: 1.1rem;
+    }
+
+    .asistencia-conclusion,
+    .asistencia-aviso {
+        margin-left: 1.1rem;
+        margin-right: 1.1rem;
     }
 }

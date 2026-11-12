@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Solapas de la pantalla de Asistencia -->
+<nav th:fragment="solapas(activa)" class="page-tabs" aria-label="Secciones de asistencia">
+    <a th:href="@{/asistencia}" class="page-tab"
+       th:classappend="${activa == 'hoy'} ? ' active'"
+       th:attr="aria-current=${activa == 'hoy'} ? 'page'">Hoy</a>
+    <a th:href="@{/asistencia/historial}" class="page-tab"
+       th:classappend="${activa == 'historial'} ? ' active'"
+       th:attr="aria-current=${activa == 'historial'} ? 'page'">Historial</a>
+</nav>
+
+<!-- Estado del socio con los mismos colores que el resto del sistema -->
+<span th:fragment="estado(valor)" th:switch="${valor}">
+    <span th:case="'ACTIVO'" class="status-badge status-badge-success">Activo</span>
+    <span th:case="'MOROSO'" class="status-badge status-badge-warning">Moroso</span>
+    <span th:case="'INACTIVO'" class="status-badge status-badge-danger">Inactivo</span>
+    <span th:case="*" class="status-badge">-</span>
+</span>
+
+<!-- Ficha de asistencia de un socio: se usa en el historial y en la ficha del socio -->
+<div th:fragment="ficha(resumen)" class="asistencia-ficha">
+    <div class="asistencia-ficha-datos">
+        <div class="socio-detail-item">
+            <span class="metric-label">Última visita</span>
+            <strong th:text="${resumen.ultimaVisita != null ? #temporals.format(resumen.ultimaVisita, 'dd/MM/yyyy') : 'Sin ingresos'}">-</strong>
+        </div>
+        <div class="socio-detail-item">
+            <span class="metric-label">Sin venir</span>
+            <strong th:if="${resumen.diasSinVenir == null}">-</strong>
+            <strong th:if="${resumen.diasSinVenir != null and resumen.diasSinVenir == 0}">Vino hoy</strong>
+            <strong th:if="${resumen.diasSinVenir != null and resumen.diasSinVenir > 0}"
+                    th:classappend="${resumen.diasSinVenir >= 10} ? ' asistencia-alerta'"
+                    th:text="${resumen.diasSinVenir == 1 ? '1 día' : resumen.diasSinVenir + ' días'}">0 días</strong>
+        </div>
+        <div class="socio-detail-item">
+            <span class="metric-label">Ingresos este mes</span>
+            <strong th:text="${resumen.ingresosEsteMes}">0</strong>
+        </div>
+        <div class="socio-detail-item">
+            <span class="metric-label">Ingresos el mes pasado</span>
+            <strong th:text="${resumen.ingresosMesPasado}">0</strong>
+        </div>
+    </div>
+
+    <div class="asistencia-semanas">
+        <div class="asistencia-semana asistencia-semana-cabecera" aria-hidden="true">
+            <span></span>
+            <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+        </div>
+        <div class="asistencia-semana" th:each="semana : ${resumen.semanas}">
+            <span class="asistencia-semana-fecha" th:text="${#temporals.format(semana.inicio, 'dd/MM')}">01/01</span>
+            <span th:each="dia, estado : ${semana.dias}" class="asistencia-dia"
+                  th:classappend="${' is-' + dia}"
+                  th:title="${#temporals.format(semana.inicio.plusDays(estado.index), 'dd/MM') + (dia == 'vino' ? ': vino' : (dia == 'falto' ? ': no vino' : ''))}"></span>
+        </div>
+    </div>
+    <small class="premium-help-text">Últimas cuatro semanas, de lunes a domingo. En dorado, los días que vino.</small>
+</div>
+
+</body>
+</html>

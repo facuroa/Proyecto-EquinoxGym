@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${'Historial de asistencia - ' + gymName}">Historial de asistencia - Gym System</title>
+    <link rel="stylesheet" th:href="@{/vendor/bootstrap/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body class="dashboard-body">
+<div class="dashboard-wrapper">
+    <aside th:replace="~{fragments/sidebar :: sidebar('asistencia')}"></aside>
+
+    <main class="main-content">
+        <div th:replace="~{fragments/toast :: toast('error', ${periodo.error})}"></div>
+
+        <header class="topbar">
+            <div>
+                <p class="topbar-label">Control de ingresos</p>
+                <h1 class="topbar-title">Asistencia</h1>
+                <p class="topbar-subtitle">Qué horarios se llenan y qué socios dejaron de venir.</p>
+            </div>
+            <div class="topbar-status">
+                <span>Período analizado</span>
+                <strong th:text="${#temporals.format(periodo.desde, 'dd/MM') + ' al ' + #temporals.format(periodo.hasta, 'dd/MM/yyyy')}">01/01 al 28/01/2026</strong>
+            </div>
+        </header>
+
+        <nav th:replace="~{fragments/asistencia :: solapas('historial')}"></nav>
+
+        <!-- Semana típica -->
+        <section class="form-section" id="semana">
+            <div class="premium-table-card">
+                <div class="premium-table-header asistencia-header-con-controles">
+                    <div>
+                        <h3>Semana típica</h3>
+                        <span th:text="${'Promedio de ingresos por franja · ' + semana.diasConRegistros + (semana.diasConRegistros == 1 ? ' día con registros · ' : ' días con registros · ') + semana.totalIngresos + (semana.totalIngresos == 1 ? ' ingreso' : ' ingresos')}">Promedio de ingresos por franja</span>
+                    </div>
+                    <div class="segmented-control" role="group" aria-label="Período a promediar">
+                        <a th:href="@{/asistencia/historial(periodo='1',dias=${umbral})}" class="segmented-option"
+                           th:classappend="${periodo.tipo == '1'} ? ' active'">1 semana</a>
+                        <a th:href="@{/asistencia/historial(periodo='4',dias=${umbral})}" class="segmented-option"
+                           th:classappend="${periodo.tipo == '4'} ? ' active'">4 semanas</a>
+                        <a th:href="@{/asistencia/historial(periodo='8',dias=${umbral})}" class="segmented-option"
+                           th:classappend="${periodo.tipo == '8'} ? ' active'">8 semanas</a>
+                        <a th:href="@{/asistencia/historial(periodo='rango',desde=${periodo.desde},hasta=${periodo.hasta},dias=${umbral})}"
+                           class="segmented-option"
+                           th:classappend="${periodo.rango} ? ' active'">Elegir fechas</a>
+                    </div>
+                </div>
+
+                <form th:if="${periodo.rango}" th:action="@{/asistencia/historial}" method="get" class="asistencia-rango">
+                    <input type="hidden" name="periodo" value="rango">
+                    <input type="hidden" name="dias" th:value="${umbral}">
+                    <div class="payment-filter-field">
+                        <label for="rangoDesde">Desde</label>
+                        <input id="rangoDesde" type="date" name="desde" class="form-control premium-input"
+                               th:value="${periodo.desde}" th:max="${periodo.hasta}" required>
+                    </div>
+                    <div class="payment-filter-field">
+                        <label for="rangoHasta">Hasta</label>
+                        <input id="rangoHasta" type="date" name="hasta" class="form-control premium-input"
+                               th:value="${periodo.hasta}" th:max="${#temporals.createToday().minusDays(1)}" required>
+                    </div>
+                    <button type="submit" class="btn btn-gold-action">Aplicar</button>
+                </form>
+
+                <div th:if="${semana.vacia}" class="morosidad-empty">
+                    <strong>No hay ingresos cargados en este período.</strong>
+                    <span>La grilla se arma con días ya terminados: los ingresos de hoy aparecen a partir de mañana.</span>
+                </div>
+
+                <div th:unless="${semana.vacia}">
+                    <div class="table-responsive asistencia-grilla-caja">
+                        <table class="asistencia-grilla">
+                            <thead>
+                            <tr>
+                                <th scope="col"><span class="visually-hidden">Franja</span></th>
+                                <th scope="col" th:each="dia : ${semana.dias}" th:text="${dia}">Lun</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="fila : ${semana.filas}">
+                                <th scope="row" th:text="${fila.hora}">19:00</th>
+                                <td th:each="celda : ${fila.celdas}"
+                                    th:class="${'asistencia-celda nivel-' + celda.nivel + (celda.superaCupo ? ' supera-cupo' : '')}"
+                                    th:text="${celda.texto}">0</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="asistencia-leyenda" aria-hidden="true">
+                        <span>Menos gente</span>
+                        <span class="asistencia-leyenda-escala">
+                            <span class="asistencia-celda nivel-0"></span>
+                            <span class="asistencia-celda nivel-1"></span>
+                            <span class="asistencia-celda nivel-2"></span>
+                            <span class="asistencia-celda nivel-3"></span>
+                            <span class="asistencia-celda nivel-4"></span>
+                        </span>
+                        <span>Más gente</span>
+                    </div>
+
+                    <p class="asistencia-conclusion" th:if="${semana.cupoReferencia > 0 and semana.cantidadPicos > 0}">
+                        <strong th:text="${(semana.cantidadPicos == 1 ? '1 franja supera las ' : semana.cantidadPicos + ' franjas superan las ') + semana.cupoReferencia + ' personas: ' + #strings.listJoin(semana.picos, ', ') + (semana.cantidadPicos > 3 ? ' y ' + (semana.cantidadPicos - 3) + ' más.' : '.')}">Franjas que superan el cupo.</strong>
+                        Son las únicas donde hoy haría falta limitar el cupo. En el resto de la semana sobra lugar.
+                    </p>
+                    <p class="asistencia-conclusion" th:if="${semana.cupoReferencia > 0 and semana.cantidadPicos == 0}">
+                        <strong th:text="${'Ninguna franja supera las ' + semana.cupoReferencia + ' personas en este período.'}">Ninguna franja supera el cupo.</strong>
+                        Con estos números todavía no hace falta limitar el cupo en ningún horario.
+                    </p>
+                    <p class="asistencia-conclusion" th:if="${semana.cupoReferencia == 0 and semana.franjaMasConcurrida != null}">
+                        <strong th:text="${'La franja más concurrida es ' + semana.franjaMasConcurrida + ', con ' + semana.promedioMasConcurrida + (semana.promedioMasConcurrida == 1 ? ' persona en promedio.' : ' personas en promedio.')}">Franja más concurrida.</strong>
+                        Si se carga el cupo de referencia en la configuración, la grilla resalta las franjas que lo superan.
+                    </p>
+
+                    <p class="asistencia-aviso" th:if="${semana.aviso == 'UNA_SEMANA'}">
+                        <strong>Una semana sola es ruidosa.</strong>
+                        Un feriado, una lluvia o un profe de licencia mueven todo el promedio.
+                        Sirve para ver cómo viene la semana, no para decidir cupos.
+                    </p>
+                    <p class="asistencia-aviso" th:if="${semana.aviso == 'VENTANA_LARGA'}">
+                        <strong>Los períodos largos aplanan los cambios.</strong>
+                        <span th:if="${semana.tendenciaPorcentaje != null}"
+                              th:text="${'Dentro de este período la asistencia diaria ' + (semana.tendenciaPorcentaje > 0 ? 'subió' : 'bajó') + ' alrededor de ' + #numbers.formatInteger(semana.tendenciaPorcentaje > 0 ? semana.tendenciaPorcentaje : -semana.tendenciaPorcentaje, 1) + '%, así que este promedio no refleja del todo lo que pasa ahora.'}">Tendencia.</span>
+                        Para decidir cupos conviene mirar 4 semanas; un período largo sirve para ver la tendencia.
+                    </p>
+                </div>
+
+                <p class="asistencia-nota">
+                    Cada celda promedia los días de esa columna que tuvieron ingresos cargados: los feriados y los días sin
+                    registros no cuentan. El día de hoy no se incluye porque todavía no terminó.
+                    <span th:if="${minutosAnticipacion > 0}"
+                          th:text="${'Quien llega hasta ' + minutosAnticipacion + ' minutos antes de la hora en punto cuenta para la franja que empieza a esa hora.'}">Anticipación.</span>
+                </p>
+            </div>
+        </section>
+
+        <!-- Socios que dejaron de venir + ficha de asistencia -->
+        <section class="row g-4" id="ausentes">
+            <div class="col-xxl-8">
+                <div class="premium-table-card h-100">
+                    <div class="premium-table-header asistencia-header-con-controles">
+                        <div>
+                            <h3>No están viniendo</h3>
+                            <span>Socios con la cuota al día que dejaron de registrar ingresos</span>
+                        </div>
+                        <div class="segmented-control" role="group" aria-label="Días sin venir">
+                            <a th:each="opcion : ${umbrales}" class="segmented-option"
+                               th:href="@{/asistencia/historial#ausentes(periodo=${periodo.tipo},desde=${periodo.desde},hasta=${periodo.hasta},dias=${opcion})}"
+                               th:classappend="${opcion == umbral} ? ' active'"
+                               th:text="${opcion + ' días'}">10 días</a>
+                        </div>
+                    </div>
+
+                    <div th:if="${!hayRegistros}" class="morosidad-empty">
+                        <strong>Todavía no hay ingresos cargados.</strong>
+                        <span>La lista se arma sola a medida que el mostrador registra quién entra.</span>
+                    </div>
+                    <div th:if="${hayRegistros and #lists.isEmpty(ausentes)}" class="morosidad-empty">
+                        <strong th:text="${'Nadie con la cuota al día lleva ' + umbral + ' días sin venir.'}">Nadie dejó de venir.</strong>
+                        <span>Probá con un umbral más corto para adelantarte.</span>
+                    </div>
+
+                    <div th:unless="${#lists.isEmpty(ausentes)}" class="table-responsive">
+                        <table class="table premium-table asistencia-table align-middle mb-0">
+                            <thead>
+                            <tr>
+                                <th>Socio</th>
+                                <th>Última visita</th>
+                                <th>Sin venir</th>
+                                <th>Cuota</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="ausente : ${ausentes}"
+                                th:classappend="${resumenSocio != null and resumenSocio.socioId == ausente.socioId} ? 'is-elegida'">
+                                <td>
+                                    <div class="asistencia-socio">
+                                        <strong th:text="${ausente.nombreCompleto}">Socio</strong>
+                                        <span th:text="${'DNI ' + ausente.dni}">DNI</span>
+                                    </div>
+                                </td>
+                                <td th:text="${ausente.ultimaVisita != null ? #temporals.format(ausente.ultimaVisita, 'dd/MM/yyyy') : 'Sin ingresos'}">-</td>
+                                <td>
+                                    <strong class="asistencia-alerta"
+                                            th:text="${ausente.diasSinVenir == 1 ? '1 día' : ausente.diasSinVenir + ' días'}">0 días</strong>
+                                </td>
+                                <td th:text="${ausente.vencimientoPlan != null ? 'Al día hasta ' + #temporals.format(ausente.vencimientoPlan, 'dd/MM/yyyy') : 'Al día'}">Al día</td>
+                                <td class="text-center">
+                                    <div class="action-buttons-premium">
+                                        <a class="btn btn-outline-gold-soft btn-sm"
+                                           th:href="@{/asistencia/historial#ausentes(periodo=${periodo.tipo},desde=${periodo.desde},hasta=${periodo.hasta},dias=${umbral},page=${paginaActual},socio=${ausente.socioId})}"
+                                           th:aria-label="${'Ver la asistencia de ' + ausente.nombreCompleto}">Ver asistencia</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="premium-pagination-bar" th:if="${totalAusentes > 0}">
+                        <span th:text="${'Mostrando ' + (primerElemento + 1) + '–' + (primerElemento + #lists.size(ausentes)) + ' de ' + totalAusentes}">Resultados</span>
+                        <nav class="premium-pagination" aria-label="Páginas de socios que no están viniendo" th:if="${totalPaginas > 1}">
+                            <a th:if="${paginaActual > 0}"
+                               th:href="@{/asistencia/historial#ausentes(periodo=${periodo.tipo},desde=${periodo.desde},hasta=${periodo.hasta},dias=${umbral},page=${paginaActual - 1})}">Anterior</a>
+                            <span th:unless="${paginaActual > 0}" class="disabled" aria-disabled="true">Anterior</span>
+                            <strong th:text="${(paginaActual + 1) + ' / ' + totalPaginas}">1 / 1</strong>
+                            <a th:if="${paginaActual + 1 < totalPaginas}"
+                               th:href="@{/asistencia/historial#ausentes(periodo=${periodo.tipo},desde=${periodo.desde},hasta=${periodo.hasta},dias=${umbral},page=${paginaActual + 1})}">Siguiente</a>
+                            <span th:unless="${paginaActual + 1 < totalPaginas}" class="disabled" aria-disabled="true">Siguiente</span>
+                        </nav>
+                    </div>
+
+                    <p class="asistencia-nota">
+                        El que paga y no viene suele darse de baja al mes siguiente: este es el momento de escribirle.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-xxl-4">
+                <div class="premium-table-card h-100">
+                    <div class="premium-table-header">
+                        <div>
+                            <h3>Ficha de asistencia</h3>
+                            <span th:text="${resumenSocio != null ? resumenSocio.nombreCompleto : 'Ningún socio elegido'}">Socio</span>
+                        </div>
+                    </div>
+
+                    <div th:if="${resumenSocio == null}" class="cash-empty-state">
+                        Elegí un socio de la lista para ver su asistencia.
+                    </div>
+
+                    <div th:if="${resumenSocio != null}" class="asistencia-ficha-panel">
+                        <p class="asistencia-ficha-contacto"
+                           th:text="${'DNI ' + resumenSocio.dni + (resumenSocio.telefono != null and !#strings.isEmpty(resumenSocio.telefono) ? ' · ' + resumenSocio.telefono : '')}">DNI</p>
+                        <div th:replace="~{fragments/asistencia :: ficha(${resumenSocio})}"></div>
+                        <div class="asistencia-ficha-acciones">
+                            <a th:if="${resumenSocio.whatsappUrl != null}" th:href="${resumenSocio.whatsappUrl}"
+                               target="_blank" rel="noopener" class="btn btn-gold-action"
+                               th:aria-label="${'Escribirle por WhatsApp a ' + resumenSocio.nombreCompleto}">Escribirle por WhatsApp</a>
+                            <a th:href="@{/socios/ver/{id}(id=${resumenSocio.socioId})}"
+                               class="btn btn-outline-gold-soft">Abrir ficha completa</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>
