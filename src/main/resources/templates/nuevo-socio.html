@@ -131,10 +131,13 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label premium-label">Fecha de inicio del plan</label>
-                            <input type="date" class="form-control premium-input" name="fechaInicioPlan"
+                            <label for="fechaInicioPlan" class="form-label premium-label">Fecha de inicio del plan</label>
+                            <input type="date" id="fechaInicioPlan" class="form-control premium-input" name="fechaInicioPlan"
                                    th:value="${fechaInicioPlanIngresada != null ? fechaInicioPlanIngresada : socio.fechaInicioPlan}">
-                            <small class="premium-help-text">Si la dejás vacía, se usa la fecha de hoy.</small>
+                            <small class="premium-help-text"
+                                   th:text="${socio.id != null
+                                       ? 'Si la cambiás, la cuota pendiente pasa a vencer en esta fecha más la duración del plan.'
+                                       : 'Si la dejás vacía, se usa la fecha de hoy.'}">Si la dejás vacía, se usa la fecha de hoy.</small>
                         </div>
 
                         <div class="col-12" th:if="${socio.id == null or !socio.tieneCuotas()}">
