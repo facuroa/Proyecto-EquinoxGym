@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,6 +13,9 @@
     <aside th:replace="~{fragments/sidebar :: sidebar('socios')}"></aside>
 
     <main class="main-content">
+        <div th:replace="~{fragments/toast :: toast('success', ${mensaje})}"></div>
+        <div th:replace="~{fragments/toast :: toast('error', ${error})}"></div>
+
         <header class="topbar">
             <div>
                 <p class="topbar-label">Ficha completa del socio</p>
@@ -264,7 +268,41 @@
                 </div>
             </div>
         </section>
+        <section sec:authorize="hasRole('ADMIN')" class="form-section">
+            <div class="premium-form-card zona-peligro">
+                <div class="premium-form-header">
+                    <h3>Eliminar socio definitivamente</h3>
+                    <span>Solo para errores de carga, como un socio cargado dos veces</span>
+                </div>
+                <div class="premium-form-body zona-peligro-cuerpo">
+                    <p class="detail-note mb-0"
+                       th:text="${'Se borra a ' + socio.nombreCompleto + ' junto con '
+                                 + impactoEliminacion.cuotas + (impactoEliminacion.cuotas == 1 ? ' cuota, ' : ' cuotas, ')
+                                 + impactoEliminacion.pagos + (impactoEliminacion.pagos == 1 ? ' pago' : ' pagos')
+                                 + (impactoEliminacion.pagos > 0 ? ' por $ ' + impactoEliminacion.totalPagado : '')
+                                 + ' y ' + impactoEliminacion.ingresos + (impactoEliminacion.ingresos == 1 ? ' ingreso.' : ' ingresos.')
+                                 + ' Si el socio dejó de venir, usá Dar de baja: conserva el historial.'}">
+                        Se borra el socio con todo su historial.
+                    </p>
+                    <button type="button" class="btn btn-delete-premium"
+                            data-eliminar-definitivo
+                            th:attr="data-url=@{/eliminar-definitivo/socio/{id}(id=${socio.id})},
+                                     data-titulo=${'Eliminar a ' + socio.nombreCompleto},
+                                     data-detalle=${'Se borra a ' + socio.nombreCompleto + ' (DNI ' + socio.dni + ') junto con '
+                                         + impactoEliminacion.cuotas + (impactoEliminacion.cuotas == 1 ? ' cuota, ' : ' cuotas, ')
+                                         + impactoEliminacion.pagos + (impactoEliminacion.pagos == 1 ? ' pago y ' : ' pagos y ')
+                                         + impactoEliminacion.ingresos + (impactoEliminacion.ingresos == 1 ? ' ingreso.' : ' ingresos.')
+                                         + ' Los cobros de una caja abierta salen de la caja; los de cajas cerradas se conservan en su arqueo.'}">
+                        Eliminar definitivamente
+                    </button>
+                </div>
+            </div>
+        </section>
     </main>
 </div>
+
+<th:block sec:authorize="hasRole('ADMIN')"><div th:replace="~{fragments/eliminar-definitivo :: modal}"></div></th:block>
+<script th:src="@{/vendor/bootstrap/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/eliminar-definitivo.js}"></script>
 </body>
 </html>

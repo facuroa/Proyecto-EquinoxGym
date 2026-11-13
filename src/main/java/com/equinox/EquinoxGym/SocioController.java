@@ -1,6 +1,10 @@
 package com.equinox.EquinoxGym;
 
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +31,7 @@ public class SocioController {
     private static final Pattern TELEFONO_VALIDO = Pattern.compile("^[+0-9()\\s-]{6,25}$");
     private static final Pattern EMAIL_VALIDO = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
     private static final Set<String> MEDIOS_PAGO = Set.of("Efectivo", "Transferencia", "Tarjeta");
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final SocioRepository socioRepository;
     private final PlanRepository planRepository;
@@ -35,6 +41,15 @@ public class SocioController {
     private final AsistenciaService asistenciaService;
     private final SocioService socioService;
     private final CobroService cobroService;
+    private final AuditoriaService auditoriaService;
+    private final EliminacionService eliminacionService;
+    private final ReservaDni reservaDni;
+    private final IndiceDniUnico indiceDniUnico;
+    private final TransactionTemplate transaccion;
+
+    private static final String DNI_REPETIDO_ALTA = "Ya existe un socio con ese DNI";
+    private static final String DNI_REPETIDO_EDICION = "Ya existe otro socio con ese DNI. Si quedó cargado dos veces, "
+            + "un administrador puede eliminar el repetido desde su ficha.";
 
     public SocioController(SocioRepository socioRepository,
                            PlanRepository planRepository,
@@ -43,7 +58,12 @@ public class SocioController {
                            AsistenciaRepository asistenciaRepository,
                            AsistenciaService asistenciaService,
                            SocioService socioService,
-                           CobroService cobroService) {
+                           CobroService cobroService,
+                           AuditoriaService auditoriaService,
+                           EliminacionService eliminacionService,
+                           ReservaDni reservaDni,
+                           IndiceDniUnico indiceDniUnico,
+                           PlatformTransactionManager transactionManager) {
         this.socioRepository = socioRepository;
         this.planRepository = planRepository;
         this.pagoRepository = pagoRepository;
@@ -52,6 +72,11 @@ public class SocioController {
         this.asistenciaService = asistenciaService;
         this.socioService = socioService;
         this.cobroService = cobroService;
+        this.auditoriaService = auditoriaService;
+        this.eliminacionService = eliminacionService;
+        this.reservaDni = reservaDni;
+        this.indiceDniUnico = indiceDniUnico;
+        this.transaccion = new TransactionTemplate(transactionManager);
     }
 
     @GetMapping("/socios")
@@ -85,6 +110,7 @@ public class SocioController {
         model.addAttribute("totalPaginas", pagina.getTotalPages());
         model.addAttribute("totalElementos", pagina.getTotalElements());
         model.addAttribute("primerElemento", pagina.getNumber() * pagina.getSize());
+        model.addAttribute("dnisRepetidos", socioRepository.dnisRepetidos());
         return "socios";
     }
 
@@ -148,6 +174,7 @@ public class SocioController {
                         Comparator.nullsLast(Comparator.naturalOrder())))
                 .orElse(null));
         model.addAttribute("resumenAsistencia", asistenciaService.resumenDeSocio(socio));
+        model.addAttribute("impactoEliminacion", eliminacionService.impactoSocio(socio));
         return "detalle-socio";
     }
 
@@ -159,7 +186,9 @@ public class SocioController {
                                @RequestParam(value = "cobrarAlta", required = false) Boolean cobrarAlta,
                                @RequestParam(value = "montoInicial", required = false) BigDecimal montoInicial,
                                @RequestParam(value = "medioPagoInicial", required = false) String medioPagoInicial,
-                               Model model) {
+                               Model model,
+                               RedirectAttributes redirectAttributes,
+                               Authentication authentication) {
 
         normalizarDatos(socioForm);
         boolean esNuevo = (socioForm.getId() == null);
@@ -169,7 +198,7 @@ public class SocioController {
 
         validarDatosPersonales(socioForm, result);
         if (dniDuplicado(socioForm)) {
-            result.rejectValue("dni", "error.socio", "Ya existe un socio con ese DNI");
+            result.rejectValue("dni", "error.socio", esNuevo ? DNI_REPETIDO_ALTA : DNI_REPETIDO_EDICION);
         }
 
         if (planId != null) {
@@ -211,97 +240,217 @@ public class SocioController {
             }
         }
 
-        if (result.hasErrors()) {
-            prepararFormularioConErrores(model, planId, fechaInicioPlanStr, cobrarAltaMarcado,
-                    montoInicial, medioPagoInicial);
-            return "nuevo-socio";
-        }
-
-        Socio socioPersistente;
-        Pago pagoInicial = null;
-        boolean teniaPlan = false;
-        boolean teniaCuotas = false;
-
-        if (esNuevo) {
-            socioPersistente = new Socio();
-        } else {
-            socioPersistente = socioRepository.findById(socioForm.getId()).orElse(null);
-            if (socioPersistente == null) {
+        Socio socioActual = null;
+        if (!esNuevo) {
+            socioActual = socioRepository.findById(socioForm.getId()).orElse(null);
+            if (socioActual == null) {
                 return "redirect:/socios";
             }
-            teniaPlan = socioPersistente.getPlan() != null;
-            teniaCuotas = socioPersistente.getCuotas() != null && !socioPersistente.getCuotas().isEmpty();
         }
 
-        socioPersistente.setNombre(socioForm.getNombre());
-        socioPersistente.setApellido(socioForm.getApellido());
-        socioPersistente.setDni(socioForm.getDni());
-        socioPersistente.setTelefono(socioForm.getTelefono());
-        socioPersistente.setEmail(socioForm.getEmail());
-        socioPersistente.setDomicilioActual(socioForm.getDomicilioActual());
-        socioPersistente.setFechaNacimiento(socioForm.getFechaNacimiento());
-        socioPersistente.setTieneLesiones(socioForm.isTieneLesiones());
-        socioPersistente.setDetalleLesiones(
-                socioForm.isTieneLesiones() ? socioForm.getDetalleLesiones() : null);
-        socioPersistente.setObservaciones(socioForm.getObservaciones());
-
-        if (socioPersistente.getEstado() == null) {
-            socioPersistente.setEstado(EstadoSocio.ACTIVO);
+        if (result.hasErrors()) {
+            return volverAlFormulario(model, socioForm, socioActual, planId, fechaInicioPlanStr,
+                    cobrarAltaMarcado, montoInicial, medioPagoInicial);
         }
 
         if (inicio == null) {
-            inicio = LocalDate.now();
+            // Al editar, dejar el campo vacio conserva la fecha que ya tenia.
+            inicio = socioActual != null && socioActual.getFechaInicioPlan() != null
+                    ? socioActual.getFechaInicioPlan() : LocalDate.now();
         }
 
-        Socio socioGuardado = socioRepository.save(socioPersistente);
+        // Todo el guardado va en una sola transaccion: si falla el cobro, no
+        // queda un socio a medias con una cuota impaga desde el dia del alta.
+        final Socio existente = socioActual;
+        final Plan plan = planSeleccionado;
+        final LocalDate fechaInicio = inicio;
+        final String usuario = authentication != null ? authentication.getName() : null;
+        ResultadoGuardado guardado;
+        try {
+            // De a un guardado por vez, y la transaccion se confirma antes de
+            // soltar el candado (ver ReservaDni).
+            guardado = reservaDni.ejecutar(() -> transaccion.execute(estado -> persistirSocio(socioForm, existente,
+                    plan, fechaInicio, cobrarAltaMarcado, montoInicial, medioPagoInicial, usuario)));
+        } catch (DataIntegrityViolationException e) {
+            // Otro pedido (por ejemplo un doble clic) creo un socio con el
+            // mismo DNI justo antes que este.
+            result.rejectValue("dni", "error.socio", existente == null ? DNI_REPETIDO_ALTA : DNI_REPETIDO_EDICION);
+            return volverAlFormulario(model, socioForm, socioActual, planId, fechaInicioPlanStr,
+                    cobrarAltaMarcado, montoInicial, medioPagoInicial);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            // Incluye CajaCerradaException: la caja se cerro entre el control y el cobro.
+            model.addAttribute("errorCobro", e.getMessage());
+            result.reject("error.socio", e.getMessage());
+            return volverAlFormulario(model, socioForm, socioActual, planId, fechaInicioPlanStr,
+                    cobrarAltaMarcado, montoInicial, medioPagoInicial);
+        }
 
-        if (planSeleccionado != null) {
-            if (esNuevo || !teniaPlan || !teniaCuotas) {
-                Cuota cuotaInicial = cobroService.asignarPlanAExistente(
-                        socioGuardado, planSeleccionado, inicio, cobrarAltaMarcado);
-                if (cobrarAltaMarcado) {
-                    BigDecimal montoACobrar = montoInicial != null ? montoInicial : planSeleccionado.getPrecio();
-                    pagoInicial = cobroService.registrarPago(cuotaInicial, montoACobrar, medioPagoInicial);
-                }
-            } else {
-                socioGuardado.setPlan(planSeleccionado);
-                socioGuardado.setFechaInicioPlan(inicio);
-                socioGuardado.setFechaVencimientoPlan(inicio.plusMonths(planSeleccionado.getDuracionMeses()));
-                socioRepository.save(socioGuardado);
-            }
+        if (guardado.pagoInicialId() != null) {
+            return "redirect:/pagos/" + guardado.pagoInicialId() + "/comprobante?origenSocio=" + guardado.socioId();
+        }
+        if (guardado.aviso() != null) {
+            redirectAttributes.addFlashAttribute("error", guardado.aviso());
         } else {
-            socioGuardado.setPlan(null);
-            socioGuardado.setFechaInicioPlan(null);
-            socioGuardado.setFechaVencimientoPlan(null);
-            socioRepository.save(socioGuardado);
-        }
-
-        if (pagoInicial != null) {
-            return "redirect:/pagos/" + pagoInicial.getId() + "/comprobante?origenSocio=" + socioGuardado.getId();
+            redirectAttributes.addFlashAttribute("mensaje", "Se guardaron los datos de " + guardado.nombre() + ".");
         }
         return "redirect:/socios";
     }
 
-    @PostMapping("/socios/eliminar/{id}")
-    @Transactional
-    public String eliminarSocio(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        Socio socio = socioRepository.findById(id).orElse(null);
+    /** Lo que hace falta saber despues de guardar, fuera de la transaccion. */
+    private record ResultadoGuardado(Long socioId, String nombre, Long pagoInicialId, String aviso) { }
 
-        if (socio != null) {
+    private ResultadoGuardado persistirSocio(Socio socioForm,
+                                             Socio socioActual,
+                                             Plan planSeleccionado,
+                                             LocalDate inicio,
+                                             boolean cobrarAlta,
+                                             BigDecimal montoInicial,
+                                             String medioPagoInicial,
+                                             String usuario) {
+        boolean esNuevo = socioActual == null;
+        // Se vuelve a controlar adentro del candado: el control del principio
+        // pudo correr al mismo tiempo que otro guardado con el mismo DNI.
+        if (dniDuplicado(socioForm)) {
+            throw new DataIntegrityViolationException("DNI repetido: " + socioForm.getDni());
+        }
+        Socio socio = esNuevo ? new Socio() : socioActual;
+        boolean teniaPlan = !esNuevo && socio.getPlan() != null;
+        boolean teniaCuotas = !esNuevo && socio.tieneCuotas();
+
+        socio.setNombre(socioForm.getNombre());
+        socio.setApellido(socioForm.getApellido());
+        socio.setDni(socioForm.getDni());
+        socio.setTelefono(socioForm.getTelefono());
+        socio.setEmail(socioForm.getEmail());
+        socio.setDomicilioActual(socioForm.getDomicilioActual());
+        socio.setFechaNacimiento(socioForm.getFechaNacimiento());
+        socio.setTieneLesiones(socioForm.isTieneLesiones());
+        socio.setDetalleLesiones(socioForm.isTieneLesiones() ? socioForm.getDetalleLesiones() : null);
+        socio.setObservaciones(socioForm.getObservaciones());
+        if (socio.getEstado() == null) {
+            socio.setEstado(EstadoSocio.ACTIVO);
+        }
+
+        // El flush adelanta el chequeo del DNI unico de la base a este punto.
+        Socio socioGuardado = socioRepository.saveAndFlush(socio);
+        Pago pagoInicial = null;
+        String aviso = null;
+
+        if (planSeleccionado == null) {
+            socioGuardado.setPlan(null);
+            socioGuardado.setFechaInicioPlan(null);
+            socioGuardado.setFechaVencimientoPlan(null);
+            socioRepository.save(socioGuardado);
+        } else if (esNuevo || !teniaPlan || !teniaCuotas) {
+            Cuota cuotaInicial = cobroService.asignarPlanAExistente(
+                    socioGuardado, planSeleccionado, inicio, cobrarAlta);
+            if (cobrarAlta) {
+                BigDecimal montoACobrar = montoInicial != null ? montoInicial : planSeleccionado.getPrecio();
+                pagoInicial = cobroService.registrarPago(cuotaInicial, montoACobrar, medioPagoInicial);
+            }
+        } else {
+            aviso = reprogramarCuotaPendiente(socioGuardado, planSeleccionado, inicio, usuario);
+        }
+
+        return new ResultadoGuardado(socioGuardado.getId(), socioGuardado.getNombreCompleto().trim(),
+                pagoInicial != null ? pagoInicial.getId() : null, aviso);
+    }
+
+    /**
+     * Cambiar el plan o la fecha de inicio de un socio que ya tiene cuotas
+     * mueve su cuota pendiente al final del nuevo periodo, con la misma regla
+     * que el alta sin cobro. Antes solo cambiaba la fecha "Vence plan" y la
+     * cuota quedaba donde estaba: la pantalla mostraba "Faltan 21 dias" y a
+     * la vez la cuota vencida.
+     *
+     * @return un aviso para mostrar si no se pudo mover ningun vencimiento
+     */
+    private String reprogramarCuotaPendiente(Socio socio, Plan plan, LocalDate inicio, String usuario) {
+        boolean cambioPlan = socio.getPlan() == null || !socio.getPlan().getId().equals(plan.getId());
+        boolean cambioInicio = !inicio.equals(socio.getFechaInicioPlan());
+        socio.setPlan(plan);
+        String aviso = null;
+
+        if (cambioPlan || cambioInicio) {
+            List<Cuota> impagas = socio.getCuotas().stream()
+                    .filter(c -> c.getFechaPago() == null && c.getFechaVencimiento() != null)
+                    .toList();
+            if (impagas.isEmpty()) {
+                socio.setFechaInicioPlan(inicio);
+                socio.setFechaVencimientoPlan(inicio.plusMonths(plan.getDuracionMeses()));
+            } else if (impagas.size() == 1) {
+                Cuota pendiente = impagas.get(0);
+                LocalDate vencimientoAnterior = pendiente.getFechaVencimiento();
+                LocalDate vencimientoNuevo = inicio.plusMonths(plan.getDuracionMeses());
+                pendiente.setFechaVencimiento(vencimientoNuevo);
+                if (cambioPlan) {
+                    pendiente.setMonto(plan.getPrecio());
+                }
+                auditoriaService.registrar(usuario, "Cuota reprogramada",
+                        socio.getNombreCompleto().trim() + " (DNI " + socio.getDni() + ")"
+                                + " · vencimiento " + FORMATO_FECHA.format(vencimientoAnterior)
+                                + " → " + FORMATO_FECHA.format(vencimientoNuevo)
+                                + (cambioPlan ? " · plan " + plan.getNombre() + " $ " + plan.getPrecio() : ""));
+            } else {
+                aviso = "Se guardaron los datos de " + socio.getNombreCompleto().trim() + ", pero tiene "
+                        + impagas.size() + " cuotas impagas y no se movió ningún vencimiento. Revisalas en Cuotas.";
+            }
+        }
+
+        // Recalcula el estado y deja "Vence plan" alineado con la cuota pendiente.
+        socioService.actualizarEstadoSocio(socio);
+        socioRepository.save(socio);
+        return aviso;
+    }
+
+    /**
+     * Vuelve a mostrar el formulario con los errores. Al editar se le pasan
+     * las cuotas del socio para que no aparezca la opcion de cobro inicial,
+     * que solo corresponde a socios sin cuotas.
+     */
+    private String volverAlFormulario(Model model, Socio socioForm, Socio socioActual, Long planId,
+                                      String fechaInicioPlanStr, boolean cobrarAlta,
+                                      BigDecimal montoInicial, String medioPagoInicial) {
+        if (socioActual != null && socioActual.getCuotas() != null) {
+            socioForm.setCuotas(new java.util.ArrayList<>(socioActual.getCuotas()));
+        }
+        prepararFormularioConErrores(model, planId, fechaInicioPlanStr, cobrarAlta, montoInicial, medioPagoInicial);
+        return "nuevo-socio";
+    }
+
+    @PostMapping("/socios/eliminar/{id}")
+    public String eliminarSocio(@PathVariable Long id,
+                                Authentication authentication,
+                                RedirectAttributes redirectAttributes) {
+        String usuario = authentication != null ? authentication.getName() : null;
+        Boolean eliminado = transaccion.execute(estado -> {
+            Socio socio = socioRepository.findById(id).orElse(null);
+            if (socio == null) {
+                return false;
+            }
             if (pagoRepository.existsByCuota_Socio_Id(socio.getId())) {
                 redirectAttributes.addFlashAttribute("error",
                         "No se puede eliminar a " + socio.getNombre() + " " + socio.getApellido()
                         + " porque tiene pagos registrados: borrarlo descuadraria la caja y los reportes. "
-                        + "Usá \"Dar de baja\" para sacarlo de los listados sin perder el historial.");
-                return "redirect:/socios";
+                        + "Usá \"Dar de baja\" para sacarlo de los listados sin perder el historial. "
+                        + "Si fue un error de carga, un administrador puede eliminarlo definitivamente desde su ficha.");
+                return false;
             }
             seguimientoMorosidadRepository.deleteBySocio_Id(socio.getId());
             asistenciaRepository.deleteBySocio_Id(socio.getId());
             socioRepository.delete(socio);
+            auditoriaService.registrar(usuario,
+                    "Socio eliminado", socio.getNombreCompleto().trim() + " (DNI " + socio.getDni() + ") · sin pagos");
             redirectAttributes.addFlashAttribute("mensaje",
                     "Se eliminó a " + socio.getNombre() + " " + socio.getApellido() + ".");
-        }
+            return true;
+        });
 
+        if (Boolean.TRUE.equals(eliminado)) {
+            // Afuera de la transaccion: si era un DNI repetido, ya se puede
+            // activar el control en la base (ver IndiceDniUnico).
+            indiceDniUnico.asegurar();
+        }
         return "redirect:/socios";
     }
 
@@ -344,10 +493,9 @@ public class SocioController {
 
     private boolean dniDuplicado(Socio socio) {
         if (socio.getDni() == null || socio.getDni().trim().isEmpty()) return false;
-        Optional<Socio> existente = socioRepository.findByDni(socio.getDni());
-        if (existente.isEmpty()) return false;
-        if (socio.getId() == null) return true;
-        return !existente.get().getId().equals(socio.getId());
+        return socio.getId() == null
+                ? socioRepository.existsByDni(socio.getDni())
+                : socioRepository.existsByDniAndIdNot(socio.getDni(), socio.getId());
     }
 
     private void validarDatosPersonales(Socio socio, BindingResult result) {

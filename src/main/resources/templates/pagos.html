@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -159,9 +160,19 @@
                                             th:data-socio="${pago.cuota != null and pago.cuota.socio != null ? pago.cuota.socio.nombreCompleto : 'este socio'}">
                                         Anular
                                     </button>
-                                    <span th:if="${pago.anulado}" class="text-muted">Sin acciones</span>
+                                    <span th:if="${pago.anulado}" sec:authorize="!hasRole('ADMIN')" class="text-muted">Sin acciones</span>
                                     <span th:if="${!pago.anulado and pago.fechaRegistro == null}"
                                           class="text-muted" title="Pago anterior al sistema de auditoría">Histórico</span>
+                                    <button sec:authorize="hasRole('ADMIN')" type="button"
+                                            class="btn btn-delete-premium btn-sm"
+                                            data-eliminar-definitivo
+                                            th:attr="data-url=@{/eliminar-definitivo/pago/{id}(id=${pago.id})},
+                                                     data-titulo=${'Eliminar el pago ' + pago.numeroComprobante},
+                                                     data-detalle=${'Pago ' + pago.numeroComprobante + ' de '
+                                                         + (pago.cuota != null and pago.cuota.socio != null ? pago.cuota.socio.nombreCompleto : 'sin socio')
+                                                         + ' por $ ' + pago.monto + ' (' + pago.medioPago + ').'
+                                                         + (pago.anulado ? ' Ya estaba anulado.' : ' La cuota vuelve a quedar pendiente.')
+                                                         + ' Si está en la caja abierta, sale de la caja.'}">Eliminar</button>
                                     </div>
                                 </td>
                             </tr>
@@ -208,7 +219,9 @@
         </div>
     </div>
 </div>
+<th:block sec:authorize="hasRole('ADMIN')"><div th:replace="~{fragments/eliminar-definitivo :: modal}"></div></th:block>
 <script th:src="@{/vendor/bootstrap/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/eliminar-definitivo.js}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const modalElement = document.getElementById('anularPagoModal');

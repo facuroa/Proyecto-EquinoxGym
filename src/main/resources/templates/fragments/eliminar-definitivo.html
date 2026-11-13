@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Ventana para confirmar una eliminacion definitiva. Cada boton que la abre
+     trae su propia direccion, titulo y detalle (ver js/eliminar-definitivo.js). -->
+<div th:fragment="modal" class="modal fade" id="eliminarDefinitivoModal" tabindex="-1"
+     aria-labelledby="eliminarDefinitivoTitulo" aria-hidden="true"
+     th:with="palabra=${T(com.equinox.EquinoxGym.EliminacionService).PALABRA_CONFIRMACION}">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content premium-modal-content">
+            <div class="modal-header premium-modal-header">
+                <div>
+                    <p class="topbar-label mb-1">Eliminación definitiva</p>
+                    <h2 class="modal-title fs-5" id="eliminarDefinitivoTitulo">Eliminar</h2>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="eliminarDefinitivoForm" th:action="@{/}" method="post" th:attr="data-palabra=${palabra}">
+                <div class="modal-body premium-modal-body">
+                    <p id="eliminarDefinitivoDetalle" class="mb-3">Se va a eliminar el registro.</p>
+                    <div class="eliminar-advertencia mb-3">
+                        No se puede deshacer. Queda registrado en Auditoría con tu usuario y el motivo.
+                    </div>
+                    <div class="mb-3">
+                        <label for="eliminarMotivo" class="form-label premium-label">Motivo</label>
+                        <textarea id="eliminarMotivo" name="motivo" class="form-control premium-input" rows="2"
+                                  minlength="5" maxlength="300" required
+                                  placeholder="Ej: socio cargado dos veces por error"></textarea>
+                    </div>
+                    <div>
+                        <label for="eliminarConfirmacion" class="form-label premium-label">
+                            Para confirmar, escribí <strong th:text="${palabra}">ELIMINAR</strong>
+                        </label>
+                        <input id="eliminarConfirmacion" name="confirmacion" type="text"
+                               class="form-control premium-input" autocomplete="off" spellcheck="false" required>
+                    </div>
+                </div>
+                <div class="modal-footer premium-modal-footer">
+                    <button type="button" class="btn btn-outline-gold-soft" data-bs-dismiss="modal">Cancelar</button>
+                    <button id="eliminarDefinitivoBoton" type="submit" class="btn btn-delete-premium" disabled>
+                        Eliminar definitivamente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

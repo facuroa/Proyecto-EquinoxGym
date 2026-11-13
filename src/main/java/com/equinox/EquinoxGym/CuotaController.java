@@ -1,5 +1,6 @@
 package com.equinox.EquinoxGym;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -20,17 +21,20 @@ public class CuotaController {
     private final PagoRepository pagoRepository;
     private final CuotaService cuotaService;
     private final SocioService socioService;
+    private final EliminacionService eliminacionService;
 
     public CuotaController(CuotaRepository cuotaRepository,
                            SocioRepository socioRepository,
                            PagoRepository pagoRepository,
                            CuotaService cuotaService,
-                           SocioService socioService) {
+                           SocioService socioService,
+                           EliminacionService eliminacionService) {
         this.cuotaRepository = cuotaRepository;
         this.socioRepository = socioRepository;
         this.pagoRepository = pagoRepository;
         this.cuotaService = cuotaService;
         this.socioService = socioService;
+        this.eliminacionService = eliminacionService;
     }
 
     @GetMapping("/cuotas")
@@ -123,9 +127,12 @@ public class CuotaController {
     }
 
     @GetMapping("/cuotas/editar/{id}")
-    public String editarCuota(@PathVariable Long id, Model model) {
-        Cuota cuota = cuotaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cuota no encontrada"));
+    public String editarCuota(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        Cuota cuota = cuotaRepository.findById(id).orElse(null);
+        if (cuota == null) {
+            redirectAttributes.addFlashAttribute("error", "Esa cuota ya no existe.");
+            return "redirect:/cuotas";
+        }
 
         if (cuota.getSocio() != null) {
             cuota.setSocioId(cuota.getSocio().getId());
@@ -144,7 +151,14 @@ public class CuotaController {
     public String actualizarCuota(@PathVariable Long id,
                                   @ModelAttribute("cuota") Cuota cuotaForm,
                                   BindingResult result,
-                                  Model model) {
+                                  Model model,
+                                  RedirectAttributes redirectAttributes) {
+
+        Cuota cuota = cuotaRepository.findById(id).orElse(null);
+        if (cuota == null) {
+            redirectAttributes.addFlashAttribute("error", "Esa cuota ya no existe.");
+            return "redirect:/cuotas";
+        }
 
         if (cuotaForm.getSocioId() == null) {
             result.rejectValue("socioId", "error.cuota", "Debe seleccionar un socio");
@@ -167,45 +181,48 @@ public class CuotaController {
             return "editar-cuota";
         }
 
-        Cuota cuota = cuotaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cuota no encontrada"));
-
-        Socio socio = socioRepository.findById(cuotaForm.getSocioId())
-                .orElseThrow(() -> new RuntimeException("Socio no encontrado"));
+        Socio socio = socioRepository.findById(cuotaForm.getSocioId()).orElse(null);
+        if (socio == null) {
+            redirectAttributes.addFlashAttribute("error", "El socio seleccionado ya no está disponible.");
+            return "redirect:/cuotas";
+        }
+        Socio socioAnterior = cuota.getSocio();
 
         cuota.setFechaVencimiento(cuotaForm.getFechaVencimiento());
         cuota.setMonto(cuotaForm.getMonto());
         cuota.setSocio(socio);
+        // Si la cuota pasa a otro socio, las dos listas tienen que enterarse:
+        // si no, el socio anterior la vuelve a grabar como propia.
+        if (socioAnterior != null && !socioAnterior.getId().equals(socio.getId())) {
+            socioAnterior.getCuotas().removeIf(c -> c.getId() != null && c.getId().equals(cuota.getId()));
+            socio.getCuotas().add(cuota);
+        }
 
         cuotaService.actualizarEstadoCuota(cuota);
         cuotaRepository.save(cuota);
 
+        // Recalcula el estado y deja "Vence plan" igual a la cuota pendiente.
         socioService.actualizarEstadoSocio(socio);
         socioRepository.save(socio);
+        if (socioAnterior != null && !socioAnterior.getId().equals(socio.getId())) {
+            socioService.actualizarEstadoSocio(socioAnterior);
+            socioRepository.save(socioAnterior);
+        }
 
         return "redirect:/cuotas";
     }
 
     @PostMapping("/cuotas/eliminar/{id}")
-    public String eliminarCuota(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        Cuota cuota = cuotaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cuota no encontrada"));
-
-        Socio socio = cuota.getSocio();
-
-        if (pagoRepository.existsByCuota_Id(id)
-                || pagoRepository.existsByCuotaRenovacionGenerada_Id(id)) {
-            redirectAttributes.addFlashAttribute("error",
-                    "No se puede eliminar una cuota vinculada al historial de pagos.");
-            return "redirect:/cuotas";
+    public String eliminarCuota(@PathVariable Long id,
+                                Authentication authentication,
+                                RedirectAttributes redirectAttributes) {
+        try {
+            String cuota = eliminacionService.eliminarCuotaSinPagos(
+                    id, authentication != null ? authentication.getName() : null);
+            redirectAttributes.addFlashAttribute("mensaje", "Se eliminó: " + cuota + ".");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
-        cuotaRepository.delete(cuota);
-
-        if (socio != null) {
-            socioService.actualizarEstadoSocio(socio);
-            socioRepository.save(socio);
-        }
-
         return "redirect:/cuotas";
     }
 }

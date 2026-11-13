@@ -9,4 +9,6 @@ public interface MovimientoCajaRepository extends JpaRepository<MovimientoCaja, 
     List<MovimientoCaja> findByCaja_IdOrderByFechaRegistroDescIdDesc(Long cajaId);
 
     boolean existsByPago_IdAndOrigen(Long pagoId, OrigenMovimientoCaja origen);
+
+    List<MovimientoCaja> findByPago_Id(Long pagoId);
 }

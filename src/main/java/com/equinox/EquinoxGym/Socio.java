@@ -15,6 +15,15 @@ public class Socio {
 
     private String nombre;
     private String apellido;
+
+    /**
+     * Unico en la base: dos clics seguidos en "Guardar" llegaban a crear dos
+     * socios con el mismo DNI, y desde ahi cualquier busqueda por DNI fallaba.
+     * Si la base ya tiene duplicados, Hibernate no puede crear la restriccion
+     * y lo avisa en el log sin frenar el arranque; se crea sola en el primer
+     * arranque despues de eliminar los duplicados.
+     */
+    @Column(unique = true)
     private String dni;
     private String telefono;
     private String email;

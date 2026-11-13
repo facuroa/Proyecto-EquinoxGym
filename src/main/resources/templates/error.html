@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${'Algo salió mal - ' + (gymName != null ? gymName : 'Sistema')}">Algo salió mal</title>
+    <link rel="stylesheet" th:href="@{/vendor/bootstrap/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body class="dashboard-body">
+<main class="error-pagina">
+    <section class="error-tarjeta" th:with="codigo=${status != null ? status : 500}">
+        <p class="topbar-label" th:text="${gymName != null ? gymName : 'Sistema'}">Sistema</p>
+
+        <th:block th:switch="${codigo}">
+            <th:block th:case="404">
+                <h1>No encontramos esa página</h1>
+                <p>Puede que el registro se haya eliminado o que la dirección esté mal escrita.</p>
+            </th:block>
+            <th:block th:case="403">
+                <h1>No tenés permiso para esto</h1>
+                <p>Esta acción la puede hacer solo un usuario administrador.</p>
+            </th:block>
+            <th:block th:case="*">
+                <h1>Algo salió mal</h1>
+                <p>No se pudo completar la operación y no se guardó nada a medias.
+                   Volvé a intentarlo; si se repite, avisá con la hora de abajo para encontrarlo en el registro del sistema.</p>
+            </th:block>
+        </th:block>
+
+        <div class="error-datos">
+            <span th:text="${'Hora: ' + #temporals.format(#temporals.createNow(), 'dd/MM/yyyy HH:mm:ss')}">Hora</span><br>
+            <span th:if="${path != null}" th:text="${'Pantalla: ' + path}">Pantalla</span><br th:if="${path != null}">
+            <span th:text="${'Código: ' + codigo}">Código</span>
+        </div>
+
+        <div class="error-acciones">
+            <a th:href="@{/dashboard}" class="btn btn-gold-action">Ir al inicio</a>
+            <button type="button" class="btn btn-outline-gold-soft" onclick="history.back()">Volver atrás</button>
+        </div>
+    </section>
+</main>
+</body>
+</html>

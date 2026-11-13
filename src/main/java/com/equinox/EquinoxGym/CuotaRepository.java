@@ -35,6 +35,10 @@ public interface CuotaRepository extends JpaRepository<Cuota, Long> {
 
     boolean existsBySocio_IdAndFechaVencimiento(Long socioId, LocalDate fechaVencimiento);
 
+    List<Cuota> findBySocio_Id(Long socioId);
+
+    long countBySocio_Id(Long socioId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM Cuota c WHERE c.id = :id")
     Optional<Cuota> findByIdForUpdate(@Param("id") Long id);

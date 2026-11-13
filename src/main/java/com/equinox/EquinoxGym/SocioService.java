@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -54,7 +55,39 @@ public class SocioService {
             socio.setEstado(EstadoSocio.ACTIVO);
         }
 
-        return cambioAlgunaCuota || estadoAnterior != socio.getEstado();
+        boolean cambioVigencia = sincronizarVigencia(socio);
+
+        return cambioAlgunaCuota || cambioVigencia || estadoAnterior != socio.getEstado();
+    }
+
+    /**
+     * Deja "Vence plan" igual al vencimiento de la cuota que falta pagar, y el
+     * inicio del plan un periodo antes. Es lo que ya hacen el alta, el cobro y
+     * la anulacion; esto cubre las ediciones a mano, que dejaban dos fechas
+     * distintas en pantalla ("Faltan 21 dias" y a la vez la cuota vencida).
+     * Como se llama cada vez que se recalcula el estado, los socios que ya
+     * quedaron desalineados se corrigen solos la proxima vez que se abren.
+     *
+     * @return si cambio alguna de las dos fechas
+     */
+    boolean sincronizarVigencia(Socio socio) {
+        if (socio.getPlan() == null || socio.getPlan().getDuracionMeses() <= 0 || socio.getCuotas() == null) {
+            return false;
+        }
+        LocalDate proximoVencimiento = socio.getCuotas().stream()
+                .filter(cuota -> cuota.getFechaPago() == null && cuota.getFechaVencimiento() != null)
+                .map(Cuota::getFechaVencimiento)
+                .min(Comparator.naturalOrder())
+                .orElse(null);
+        if (proximoVencimiento == null) {
+            return false;
+        }
+        LocalDate inicio = proximoVencimiento.minusMonths(socio.getPlan().getDuracionMeses());
+        boolean cambio = !proximoVencimiento.equals(socio.getFechaVencimientoPlan())
+                || !inicio.equals(socio.getFechaInicioPlan());
+        socio.setFechaVencimientoPlan(proximoVencimiento);
+        socio.setFechaInicioPlan(inicio);
+        return cambio;
     }
 
     public List<Socio> listarTodosActualizados() {

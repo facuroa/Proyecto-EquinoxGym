@@ -60,3 +60,6 @@ deploy/windows/config/*.cnf
 
 # Perfil de navegador Edge que quedo suelto en esta carpeta (datos de Autofill/Wallet), no es del proyecto
 .edge-cv/
+
+# Registro del sistema cuando se ejecuta desde la carpeta del proyecto
+logs/

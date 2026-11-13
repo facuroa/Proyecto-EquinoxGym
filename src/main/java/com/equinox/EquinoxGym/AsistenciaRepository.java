@@ -43,5 +43,7 @@ public interface AsistenciaRepository extends JpaRepository<Asistencia, Long> {
     @Query("SELECT a.socio.id, MAX(a.fecha) FROM Asistencia a GROUP BY a.socio.id")
     List<Object[]> ultimaFechaPorSocio();
 
+    long countBySocio_Id(Long socioId);
+
     void deleteBySocio_Id(Long socioId);
 }

@@ -29,6 +29,18 @@
             </div>
         </header>
 
+        <section class="dni-repetido-aviso" th:if="${dnisRepetidos != null and !dnisRepetidos.isEmpty()}">
+            <strong th:text="${dnisRepetidos.size() == 1 ? 'Hay un DNI cargado en más de un socio' : 'Hay ' + dnisRepetidos.size() + ' DNI cargados en más de un socio'}">
+                Hay un DNI cargado en más de un socio
+            </strong>
+            <p>Seguramente se guardaron dos veces. Abrí cada uno, quedate con el que tiene los datos correctos
+                y pedile a un administrador que elimine el repetido desde su ficha.</p>
+            <div class="dni-repetido-lista">
+                <a th:each="dniRepetido : ${dnisRepetidos}" th:href="@{/socios(buscar=${dniRepetido})}"
+                   class="btn btn-sm btn-outline-gold" th:text="${'DNI ' + dniRepetido}">DNI</a>
+            </div>
+        </section>
+
         <section class="socios-toolbar-section">
             <div class="socios-toolbar-card">
                 <div class="row g-3 align-items-end">

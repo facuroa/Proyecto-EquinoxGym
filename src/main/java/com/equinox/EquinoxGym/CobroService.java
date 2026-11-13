@@ -1,9 +1,14 @@
 package com.equinox.EquinoxGym;
 
 import org.springframework.stereotype.Service;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -16,6 +21,9 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class CobroService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final SocioRepository socioRepository;
     private final CuotaRepository cuotaRepository;
@@ -129,6 +137,9 @@ public class CobroService {
         if (cobrarAlta) {
             cajaService.validarCajaParaPago(medioPagoInicial, usuarioActual());
         }
+        if (dni != null && socioRepository.existsByDni(dni)) {
+            throw new DataIntegrityViolationException("DNI repetido: " + dni);
+        }
 
         Socio socio = new Socio();
         socio.setNombre(nombre);
@@ -202,6 +213,7 @@ public class CobroService {
     }
 
     public Pago registrarPago(Cuota cuota, BigDecimal monto, String medioPago) {
+        cuota = bloquearCuota(cuota);
         validarPago(cuota, monto, medioPago);
         String usuario = usuarioActual();
         cajaService.validarCajaParaPago(medioPago, usuario);
@@ -320,6 +332,24 @@ public class CobroService {
         cajaService.validarCajaParaPago(medioPago, usuarioActual());
     }
 
+    /**
+     * Dos clics seguidos en "Cobrar" llegaban a registrar dos pagos de la
+     * misma cuota, y los dos entraban a la caja. Se bloquea la fila de la
+     * cuota y se relee de la base: el segundo pedido espera a que termine el
+     * primero y ve la cuota ya pagada.
+     */
+    private Cuota bloquearCuota(Cuota cuota) {
+        if (cuota == null || cuota.getId() == null) {
+            return cuota;
+        }
+        Cuota gestionada = entityManager.contains(cuota) ? cuota : entityManager.find(Cuota.class, cuota.getId());
+        if (gestionada == null) {
+            return cuota;
+        }
+        entityManager.refresh(gestionada, LockModeType.PESSIMISTIC_WRITE);
+        return gestionada;
+    }
+
     private void validarPago(Cuota cuota, BigDecimal monto, String medioPago) {
         if (cuota == null) {
             throw new IllegalArgumentException("La cuota no existe.");
@@ -375,6 +405,11 @@ public class CobroService {
             siguienteCuota.setFechaVencimiento(proximoVencimiento);
             siguienteCuota.setEstado(EstadoCuota.PENDIENTE);
             cuotaRepository.save(siguienteCuota);
+            // Tambien en la lista del socio, para que lo que se haga despues
+            // en la misma operacion (estado, vigencia, eliminacion) la vea.
+            if (socio.getCuotas() != null && !socio.getCuotas().contains(siguienteCuota)) {
+                socio.getCuotas().add(siguienteCuota);
+            }
 
             socio.setFechaInicioPlan(baseRenovacion);
             socio.setFechaVencimientoPlan(proximoVencimiento);

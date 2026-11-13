@@ -1,5 +1,6 @@
 package com.equinox.EquinoxGym;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -23,17 +24,20 @@ public class CobroController {
     private final CobroService cobroService;
     private final SocioService socioService;
     private final PagoRepository pagoRepository;
+    private final ReservaDni reservaDni;
 
     public CobroController(SocioRepository socioRepository,
                            PlanRepository planRepository,
                            CobroService cobroService,
                            SocioService socioService,
-                           PagoRepository pagoRepository) {
+                           PagoRepository pagoRepository,
+                           ReservaDni reservaDni) {
         this.socioRepository = socioRepository;
         this.planRepository = planRepository;
         this.cobroService = cobroService;
         this.socioService = socioService;
         this.pagoRepository = pagoRepository;
+        this.reservaDni = reservaDni;
     }
 
     /**
@@ -133,7 +137,7 @@ public class CobroController {
             return "redirect:/cobrar?altaRapida=true&error=datosInvalidos";
         }
 
-        if (socioRepository.findByDni(dni).isPresent()) {
+        if (socioRepository.existsByDni(dni)) {
             return "redirect:/cobrar?altaRapida=true&error=dniDuplicado";
         }
 
@@ -152,8 +156,7 @@ public class CobroController {
         boolean cobrarAltaMarcado = Boolean.TRUE.equals(cobrarAlta);
 
         try {
-            Socio socio = cobroService.altaRapidaConPlanYCobro(
-                    nombre, apellido, dni, telefono, email, domicilioActual, nacimiento,
+            Socio socio = altaDeAUna(nombre, apellido, dni, telefono, email, domicilioActual, nacimiento,
                     Boolean.TRUE.equals(tieneLesiones), detalleLesiones, plan, inicio,
                     cobrarAltaMarcado, montoInicial, medioPagoInicial);
 
@@ -169,9 +172,27 @@ public class CobroController {
             return "redirect:/cobrar?socioId=" + socio.getId() + "&mensaje=" + mensaje;
         } catch (CajaCerradaException e) {
             return "redirect:/cobrar?altaRapida=true&error=cajaCerrada";
-        } catch (IllegalArgumentException e) {
+        } catch (DataIntegrityViolationException e) {
+            // Doble clic en "Crear socio": el primer pedido ya lo creo y la
+            // base rechaza el segundo por el DNI repetido.
+            return "redirect:/cobrar?altaRapida=true&error=dniDuplicado";
+        } catch (IllegalArgumentException | IllegalStateException e) {
             return "redirect:/cobrar?altaRapida=true&error=pagoInvalido";
         }
+    }
+
+    /**
+     * De a un alta por vez, para que un doble clic no cree dos socios con el
+     * mismo DNI (ver ReservaDni). El servicio abre y confirma su transaccion
+     * adentro del candado.
+     */
+    private Socio altaDeAUna(String nombre, String apellido, String dni, String telefono, String email,
+                             String domicilioActual, LocalDate nacimiento, boolean tieneLesiones,
+                             String detalleLesiones, Plan plan, LocalDate inicio, boolean cobrarAlta,
+                             BigDecimal montoInicial, String medioPagoInicial) {
+        return reservaDni.ejecutar(() -> cobroService.altaRapidaConPlanYCobro(
+                nombre, apellido, dni, telefono, email, domicilioActual, nacimiento,
+                tieneLesiones, detalleLesiones, plan, inicio, cobrarAlta, montoInicial, medioPagoInicial));
     }
 
     /** Asigna un plan a un socio existente que no tenía uno activo. */

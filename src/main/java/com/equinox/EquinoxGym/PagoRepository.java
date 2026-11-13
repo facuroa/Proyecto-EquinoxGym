@@ -53,6 +53,10 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     boolean existsByCuotaRenovacionGenerada_Id(Long cuotaId);
 
+    List<Pago> findByCuota_Id(Long cuotaId);
+
+    List<Pago> findByCuotaRenovacionGenerada_Id(Long cuotaId);
+
     @Query("""
             SELECT p FROM Pago p
             WHERE (:buscar = '' OR
