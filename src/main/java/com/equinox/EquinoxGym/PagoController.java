@@ -190,7 +190,11 @@ public class PagoController {
         }
         String mensaje = "Hola " + socio.getNombre() + ", te compartimos tu comprobante de " + gymName
                 + ": pago de $ " + pago.getMonto() + " registrado el "
-                + FORMATO_FECHA.format(pago.getFechaPago()) + " (" + pago.getNumeroComprobante() + "). ¡Gracias!";
+                + FORMATO_FECHA.format(pago.getFechaPago()) + " (" + pago.getNumeroComprobante() + ")."
+                + (pago.getVigenteHasta() != null
+                    ? " Tu cuota queda al día hasta el " + FORMATO_FECHA.format(pago.getVigenteHasta()) + "."
+                    : "")
+                + " ¡Gracias!";
         return WhatsAppLinkBuilder.construirUrl(socio.getTelefono(), mensaje);
     }
 

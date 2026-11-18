@@ -3882,3 +3882,28 @@ a {
     flex-wrap: wrap;
     gap: 0.5rem;
 }
+
+/* Comprobante: proximo vencimiento destacado (hasta cuando queda al dia). */
+.receipt-grid .receipt-vencimiento {
+    grid-column: 1 / -1;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-md);
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid rgba(212, 175, 55, 0.32);
+}
+
+.receipt-grid .receipt-vencimiento strong {
+    font-size: 1.25rem;
+    color: var(--gold-soft);
+}
+
+@media print {
+    .receipt-grid .receipt-vencimiento {
+        background: #fbf6e4 !important;
+        border-color: #e3d49a !important;
+    }
+
+    .receipt-grid .receipt-vencimiento strong {
+        color: #8b6d00 !important;
+    }
+}

@@ -143,4 +143,45 @@ public class Pago {
                 ? prefijoComprobante + "-PENDIENTE"
                 : String.format("%s-%08d", prefijoComprobante, id);
     }
+
+    // ------------------------------------------------------------------
+    // Periodo que cubre el pago, para el comprobante. El socio lee ahi
+    // "vencimiento" como hasta cuando esta al dia; antes se mostraba la fecha
+    // de la cuota que se pago (en un alta, el mismo dia del pago).
+    // ------------------------------------------------------------------
+
+    /**
+     * Desde cuando cuenta el periodo pagado. Misma regla que el cobro: si se
+     * paga a tiempo se conserva la fecha de la cuota; si se paga atrasado, el
+     * periodo arranca el dia del pago.
+     */
+    public LocalDate getVigenteDesde() {
+        if (cuota == null || cuota.getFechaVencimiento() == null || fechaPago == null) {
+            return null;
+        }
+        return cuota.getFechaVencimiento().isBefore(fechaPago) ? fechaPago : cuota.getFechaVencimiento();
+    }
+
+    /** Proximo vencimiento: hasta cuando queda al dia el socio con este pago. */
+    public LocalDate getVigenteHasta() {
+        if (cuotaRenovacionGenerada != null && cuotaRenovacionGenerada.getFechaVencimiento() != null) {
+            return cuotaRenovacionGenerada.getFechaVencimiento();
+        }
+        // Si la cuota siguiente ya existia, el cobro no guarda la referencia:
+        // se calcula con la duracion del plan.
+        LocalDate desde = getVigenteDesde();
+        Plan plan = cuota != null && cuota.getSocio() != null ? cuota.getSocio().getPlan() : null;
+        if (desde == null || plan == null || plan.getDuracionMeses() <= 0) {
+            return null;
+        }
+        return desde.plusMonths(plan.getDuracionMeses());
+    }
+
+    /** "Cuota Crossfit", o "Cuota de gimnasio" si el socio no tiene plan. */
+    public String getConcepto() {
+        Plan plan = cuota != null && cuota.getSocio() != null ? cuota.getSocio().getPlan() : null;
+        return plan != null && plan.getNombre() != null && !plan.getNombre().isBlank()
+                ? "Cuota " + plan.getNombre().trim()
+                : "Cuota de gimnasio";
+    }
 }

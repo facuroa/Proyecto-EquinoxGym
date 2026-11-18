@@ -11,6 +11,7 @@ import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -82,9 +83,16 @@ public final class ComprobantePdfGenerator {
                         pago.getFechaPago() != null ? FORMATO_FECHA.format(pago.getFechaPago()) : "-");
                 y = renglon(cs, normal, negrita, y, "Medio de pago",
                         pago.getMedioPago() != null ? pago.getMedioPago() : "-");
-                if (pago.getCuota() != null && pago.getCuota().getFechaVencimiento() != null) {
-                    y = renglon(cs, normal, negrita, y, "Concepto",
-                            "Cuota de gimnasio - vencimiento " + FORMATO_FECHA.format(pago.getCuota().getFechaVencimiento()));
+                if (pago.getCuota() != null) {
+                    LocalDate desde = pago.getVigenteDesde();
+                    LocalDate hasta = pago.getVigenteHasta();
+                    y = renglon(cs, normal, negrita, y, "Concepto", pago.getConcepto()
+                            + (desde != null && hasta != null
+                                ? " - del " + FORMATO_FECHA.format(desde) + " al " + FORMATO_FECHA.format(hasta)
+                                : ""));
+                    if (hasta != null && !pago.isAnulado()) {
+                        y = renglon(cs, normal, negrita, y, "Próximo vencimiento", FORMATO_FECHA.format(hasta));
+                    }
                 }
 
                 y -= 14;

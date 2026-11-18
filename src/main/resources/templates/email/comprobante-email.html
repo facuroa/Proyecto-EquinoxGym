@@ -31,6 +31,14 @@
                         <td style="color:#6b6250;">Medio de pago</td>
                         <td style="text-align:right;" th:text="${pago.medioPago}">-</td>
                     </tr>
+                    <tr th:if="${pago.vigenteDesde != null and pago.vigenteHasta != null}">
+                        <td style="color:#6b6250;">Concepto</td>
+                        <td style="text-align:right;" th:text="${pago.concepto + ' · del ' + #temporals.format(pago.vigenteDesde, 'dd/MM/yyyy') + ' al ' + #temporals.format(pago.vigenteHasta, 'dd/MM/yyyy')}">-</td>
+                    </tr>
+                    <tr th:if="${pago.vigenteHasta != null}">
+                        <td style="color:#6b6250; font-weight:bold;">Próximo vencimiento</td>
+                        <td style="text-align:right; font-weight:bold;" th:text="${#temporals.format(pago.vigenteHasta, 'dd/MM/yyyy')}">-</td>
+                    </tr>
                     <tr>
                         <td style="color:#6b6250; font-weight:bold;">Total abonado</td>
                         <td style="text-align:right; font-weight:bold;" th:text="${'$ ' + pago.monto}">$ 0</td>

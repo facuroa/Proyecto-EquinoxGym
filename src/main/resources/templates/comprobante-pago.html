@@ -59,13 +59,20 @@
                     <span>Medio de pago</span>
                     <strong th:text="${pago.medioPago}">-</strong>
                 </div>
+                <div class="receipt-vencimiento" th:if="${!pago.anulado and pago.vigenteHasta != null}">
+                    <span>Próximo vencimiento</span>
+                    <strong th:text="${#temporals.format(pago.vigenteHasta, 'dd/MM/yyyy')}">-</strong>
+                </div>
             </div>
         </section>
 
         <section class="receipt-concept">
             <div>
                 <span>Concepto</span>
-                <strong th:text="${pago.cuota != null ? 'Cuota de gimnasio · vencimiento ' + #temporals.format(pago.cuota.fechaVencimiento, 'dd/MM/yyyy') : 'Pago de gimnasio'}">Cuota</strong>
+                <strong th:text="${pago.cuota == null ? 'Pago de gimnasio'
+                        : pago.concepto + (pago.vigenteDesde != null and pago.vigenteHasta != null
+                            ? ' · del ' + #temporals.format(pago.vigenteDesde, 'dd/MM/yyyy') + ' al ' + #temporals.format(pago.vigenteHasta, 'dd/MM/yyyy')
+                            : '')}">Cuota</strong>
             </div>
             <div class="receipt-amount">
                 <span>Total abonado</span>
@@ -81,10 +88,6 @@
             <div>
                 <span>Fecha y hora de registro</span>
                 <strong th:text="${pago.fechaRegistro != null ? #temporals.format(pago.fechaRegistro, 'dd/MM/yyyy HH:mm') : pago.fechaPago}">-</strong>
-            </div>
-            <div th:if="${pago.cuotaRenovacionGenerada != null}">
-                <span>Próximo vencimiento generado</span>
-                <strong th:text="${#temporals.format(pago.cuotaRenovacionGenerada.fechaVencimiento, 'dd/MM/yyyy')}">-</strong>
             </div>
         </section>
 
