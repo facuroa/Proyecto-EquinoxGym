@@ -114,7 +114,7 @@ class FechasYComprobanteTests {
 
         String whatsapp = URLDecoder.decode(
                 (String) resultado.getModelAndView().getModel().get("whatsappUrl"), StandardCharsets.UTF_8);
-        assertThat(whatsapp).contains("Tu cuota queda al día hasta el " + DMY.format(hasta));
+        assertThat(whatsapp).contains("Recibimos tu pago", "Próximo vencimiento: *" + DMY.format(hasta) + "*");
     }
 
     @Test

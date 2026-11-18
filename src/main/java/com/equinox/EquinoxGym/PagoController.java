@@ -13,20 +13,19 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.io.IOException;
 
 @Controller
 public class PagoController {
 
-    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final PagoRepository pagoRepository;
     private final CuotaRepository cuotaRepository;
     private final CuotaService cuotaService;
     private final CobroService cobroService;
     private final LogoService logoService;
+    private final MensajeComprobanteWhatsApp mensajeWhatsApp;
     private final String gymName;
 
     public PagoController(PagoRepository pagoRepository,
@@ -34,12 +33,14 @@ public class PagoController {
                           CuotaService cuotaService,
                           CobroService cobroService,
                           LogoService logoService,
+                          MensajeComprobanteWhatsApp mensajeWhatsApp,
                           @Value("${equinox.branding.gym-name:Keep Fit Gym}") String gymName) {
         this.pagoRepository = pagoRepository;
         this.cuotaRepository = cuotaRepository;
         this.cuotaService = cuotaService;
         this.cobroService = cobroService;
         this.logoService = logoService;
+        this.mensajeWhatsApp = mensajeWhatsApp;
         this.gymName = gymName;
     }
 
@@ -188,13 +189,7 @@ public class PagoController {
         if (socio == null || pago.isAnulado()) {
             return null;
         }
-        String mensaje = "Hola " + socio.getNombre() + ", te compartimos tu comprobante de " + gymName
-                + ": pago de $ " + pago.getMonto() + " registrado el "
-                + FORMATO_FECHA.format(pago.getFechaPago()) + " (" + pago.getNumeroComprobante() + ")."
-                + (pago.getVigenteHasta() != null
-                    ? " Tu cuota queda al día hasta el " + FORMATO_FECHA.format(pago.getVigenteHasta()) + "."
-                    : "")
-                + " ¡Gracias!";
+        String mensaje = mensajeWhatsApp.armar(pago, socio);
         return WhatsAppLinkBuilder.construirUrl(socio.getTelefono(), mensaje);
     }
 
